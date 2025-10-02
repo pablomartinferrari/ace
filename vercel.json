@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd frontend && npm ci && npm run build",
+  "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "npm ci && cd frontend && npm ci",
+  "installCommand": "cd frontend && npm ci",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -11,5 +11,8 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

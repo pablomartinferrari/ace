@@ -1,20 +1,29 @@
 # ACE - Full-Stack Application
 
-A full-stack application with React frontend and Vercel serverless API.
+A full-stack application with React frontend and Vercel serverless API for property exchange marketplace.
 
 ## Project Structure
 
 ```
 ace/
 ├── api/                    # Vercel serverless functions
-│   ├── test.js            # Test API endpoint
+│   ├── posts.js           # Posts API endpoint
+│   ├── server.js          # Local development server
 │   └── package.json       # API dependencies
 ├── frontend/              # React frontend
 │   ├── src/
-│   │   ├── App.tsx        # Main app component with API test
+│   │   ├── components/    # React components
+│   │   │   ├── FeedDisplay.tsx    # Main feed component
+│   │   │   ├── CreatePostForm.tsx # Post creation form
+│   │   │   └── ...
+│   │   ├── services/      # API services
+│   │   │   └── postsService.ts    # Posts service with mock/real API
+│   │   ├── stores/        # Zustand state management
 │   │   └── ...
+│   ├── .env.local         # Local environment variables
 │   ├── package.json
 │   └── vite.config.ts
+├── shared/                # Shared types and utilities
 ├── vercel.json           # Vercel deployment configuration
 └── README.md
 ```
@@ -27,12 +36,32 @@ ace/
 
 ### Running Locally
 
-1. **Start the API server** (for local development):
+#### Option 1: With Mock Data (Recommended for Frontend Development)
+
+The app is configured to use mock data by default in development mode, so you can run just the frontend without the backend:
+
+1. **Start the frontend**:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   Frontend will run on `http://localhost:5173`
+
+2. **Access the app**:
+   - Open `http://localhost:5173` in your browser
+   - You'll see mock posts in the feed
+   - You can create new posts (they'll be added to the mock data)
+
+#### Option 2: Full Stack (With Real API)
+
+For full-stack development with real API calls:
+
+1. **Start the API server**:
    ```bash
    cd api
-   node server.js
+   npm run dev
    ```
-   API will run on `http://localhost:3001`
+   API will run on `http://localhost:3000`
 
 2. **Start the frontend** (in a new terminal):
    ```bash
@@ -41,10 +70,45 @@ ace/
    ```
    Frontend will run on `http://localhost:5173`
 
-3. **Test the connection**:
-   - Open `http://localhost:5173` in your browser
-   - Click "Test API Connection" button
-   - You should see a JSON response from the API
+3. **Configure for real API** (optional):
+   - Edit `frontend/.env.local`
+   - Set `VITE_USE_MOCK_DATA=false`
+   - Restart the frontend
+
+### Environment Configuration
+
+The `frontend/.env.local` file controls data source:
+- `VITE_USE_MOCK_DATA=true` - Use mock data (default in development)
+- `VITE_USE_MOCK_DATA=false` - Use real API calls
+
+## Features
+
+- **Property Exchange Feed**: Browse NEED and HAVE posts for properties
+- **Post Creation**: Create posts with property details, images, and tags
+- **Search & Filter**: Search posts and filter by type (NEED/HAVE)
+- **Responsive Design**: Works on mobile, tablet, and desktop
+- **Mock Data Support**: Run frontend-only with realistic sample data
+
+## Deployment to Vercel
+
+### Option 1: Deploy via Vercel CLI
+
+1. **Install Vercel CLI**:
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **Deploy from the root directory**:
+   ```bash
+   vercel
+   ```
+
+3. **Follow the prompts**:
+   - Set up and deploy: Yes
+   - Which scope: (your account)
+   - Link to existing project: No
+   - Project name: ace (or your preferred name)
+   - In which directory is your code located: ./
 
 ## Deployment to Vercel
 
