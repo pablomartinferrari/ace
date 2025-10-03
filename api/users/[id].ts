@@ -3,24 +3,33 @@ import { connectDB } from '../_lib/db';
 import { User } from '../_lib/models/User';
 import { setCors } from '../_lib/cors';
 import { logRequest, logError } from '../_lib/logger';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCors(res);
-  logRequest(req);
-
-  console.log('Users API called with method:', req.method, 'query:', req.query, 'url:', req.url);
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
   try {
+    setCors(res);
+    logRequest(req);
+
+    console.log('Users API called with method:', req.method, 'query:', req.query, 'url:', req.url);
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+    console.log('Attempting to connect to database...');
     await connectDB();
-    const { userId } = req.query;
+    console.log('Database connected successfully');
+
+    const rawUserId = req.query.userId ?? req.query.id;
+    const userId = Array.isArray(rawUserId) ? rawUserId[0] : rawUserId;
 
     console.log('Looking up user with ID:', userId);
 
-    if (!userId || typeof userId !== 'string') {
-      console.error('Invalid userId:', userId);
+    if (!userId || typeof userId !== 'string' || !userId.trim()) {
+      console.error('Invalid userId:', rawUserId);
       return res.status(400).json({ error: 'User ID is required' });
     }
 
@@ -55,6 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error('Users API error:', error);
     logError(error);
-    return res.status(500).json({ error: 'Failed to fetch user profile' });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return res.status(500).json({ error: 'Failed to fetch user profile', details: errorMessage });
   }
 }

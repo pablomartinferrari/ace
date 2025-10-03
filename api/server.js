@@ -19,7 +19,7 @@ const registerHandler = require('./auth/register').default;
 let usersHandler;
 try {
   if (process.env.MONGODB_URI) {
-    usersHandler = require('./users/[userId]').default;
+    usersHandler = require('./users/[id]').default;
   }
 } catch (error) {
   console.warn('Users handler not loaded - MONGODB_URI not configured');
