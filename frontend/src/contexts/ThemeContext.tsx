@@ -129,7 +129,9 @@ export const AppThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => 
   // Detect browser preference
   const getBrowserTheme = (): boolean => {
     if (typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      console.log('Browser theme detection:', prefersDark ? 'dark' : 'light');
+      return prefersDark;
     }
     return false; // Default to light theme on server
   };
@@ -140,6 +142,7 @@ export const AppThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
+      console.log('Browser theme changed to:', e.matches ? 'dark' : 'light');
       setIsDark(e.matches);
     };
 

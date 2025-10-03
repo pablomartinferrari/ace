@@ -15,19 +15,19 @@ import {
   Divider,
   IconButton,
   Link,
+  Tooltip,
 } from "@mui/material";
 import {
   ShoppingCart as NeedIcon,
   CheckCircle as HaveIcon,
   Person as PersonIcon,
   Add as AddIcon,
-  Brightness4 as DarkModeIcon,
-  Brightness7 as LightModeIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
 import type { Post, PostType } from '../../../shared/types';
 import SearchAndFilterBar from './SearchAndFilterBar';
 import CreatePostForm, { type CreatePostFormData } from './CreatePostForm';
+import ErrorDisplay from './ErrorDisplay';
 import { postsService, type CreatePostData } from '../services/postsService';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -44,13 +44,129 @@ const FeedDisplay: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<PostType | 'ALL'>('ALL');
+  const [filterPrice, setFilterPrice] = useState('ALL');
+  const [filterSize, setFilterSize] = useState('ALL');
   // Local state for create-post popover
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   const { user } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
+
+  // Smart search normalization function
+  const normalizeSearchTerm = (term: string): string => {
+    return term
+      .toLowerCase()
+      .replace(/[.,]/g, '') // Remove periods and commas
+      .replace(/\bst\b/g, 'saint') // st -> saint
+      .replace(/\bst\./g, 'saint') // st. -> saint
+      .replace(/\bmt\b/g, 'mount') // mt -> mount
+      .replace(/\bmt\./g, 'mount') // mt. -> mount
+      .replace(/\bft\b/g, 'fort') // ft -> fort
+      .replace(/\bft\./g, 'fort') // ft. -> fort
+      .trim();
+  };
+
+  // Smart search parsing function
+  const parseSmartSearch = (query: string) => {
+    const terms = query.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+    const normalizedTerms = terms.map(normalizeSearchTerm);
+
+    // Known property types
+    const propertyTypes = ['office', 'retail', 'industrial', 'land', 'multifamily'];
+
+    // Common US states and their abbreviations
+    const states = {
+      'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+      'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+      'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+      'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+      'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+      'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+      'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+      'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+      'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+      'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY'
+    };
+
+    const stateAbbreviations = Object.values(states);
+    const stateNames = Object.keys(states);
+
+    // Common cities (expandable list)
+    const commonCities = [
+      'orlando', 'miami', 'tampa', 'jacksonville', 'tallahassee', 'saint petersburg', 'saint cloud',
+      'fort lauderdale', 'cape coral', 'pembroke pines', 'hollywood', 'gainesville', 'coral springs',
+      'clearwater', 'miami beach', 'palm bay', 'west palm beach', 'lakeland', 'davie', 'miami gardens',
+      'plantation', 'sunrise', 'wellington', 'boynton beach', 'delray beach', 'boca raton', 'naples',
+      'pompano beach', 'deerfield beach', 'parkland', 'coconut creek', 'fort myers', 'winter garden',
+      'sarasota', 'coral gables', 'bonita springs', 'pinellas park', 'winter park', 'aventura',
+      'university park', 'doral', 'cutler bay', 'oakland park', 'north lauderdale', 'lauderdale lakes',
+      'lauderhill', 'palm springs', 'hialeah gardens', 'dania beach', 'hallandale beach', 'miami lakes',
+      'sweetwater', 'bay harbor islands', 'surfside', 'bal harbour', 'golden beach', 'indian creek',
+      'pinecrest', 'palmetto bay', 'cutler', 'south miami', 'gladeview', 'fisher island', 'key biscayne',
+      'north bay village', 'el portal', 'miami shores', 'biscayne park', 'miami springs', 'virginia gardens',
+      'west miami', 'brownsville', 'gladeview', 'model city', 'little haiti', 'upper east side',
+      'design district', 'wynwood', 'midtown', 'brickell', 'downtown miami', 'coconut grove',
+      'coral way', 'the roads', 'south beach', 'lincoln road', 'bal harbour shops', 'bonaventure',
+      'pinecrest', 'palmetto bay', 'redland', 'homestead', 'florida city', 'key largo', 'islamorada',
+      'marathon', 'key west', 'big pine key', 'summerland key', 'cudjoe key', 'sugarloaf key',
+      'ramrod key', 'little torch key', 'middle torch key', 'big torch key', 'stock island',
+      'key haven', 'cudjoe key', 'sugarloaf key', 'ramrod key', 'little torch key', 'middle torch key',
+      'big torch key', 'stock island', 'key haven', 'geiger key', 'fleming key', 'windley key',
+      'plantain key', 'grassy key', 'marathon', 'duck key', 'conch key', 'long key', 'layton',
+      'islamorada', 'tavernier', 'key largo', 'oceanside', 'anglers park', 'rock harbor', 'plantations',
+      'oceanside', 'anglers park', 'rock harbor', 'plantations', 'mandarin', 'baymeadows', 'beaches',
+      'atlantic beach', 'neptune beach', 'ponte vedra beach', 'sawgrass', 'st johns', 'clay', 'duval',
+      'nassau', 'baker', 'union', 'bradford', 'alachua', 'gilchrist', 'levy', 'dixie', 'lafayette',
+      'suwannee', 'columbia', 'hamilton', 'madison', 'taylor', 'lafayette', 'wakulla', 'jefferson',
+      'gadsden', 'liberty', 'franklin', 'walton', 'okaloosa', 'santa rosa', 'escambia', 'holmes',
+      'washington', 'bay', 'jackson', 'calhoun', 'gulf', 'citrus', 'hernando', 'pasco', 'pinellas',
+      'hillsborough', 'manatee', 'sarasota', 'charlotte', 'lee', 'hendry', 'glades', 'ooltowaha',
+      'brevard', 'volusia', 'flagler', 'putnam', 'st johns', 'clay', 'duval', 'nassau', 'baker',
+      'union', 'bradford', 'alachua', 'gilchrist', 'levy', 'dixie', 'lafayette', 'suwannee', 'columbia',
+      'hamilton', 'madison', 'taylor', 'lafayette', 'wakulla', 'jefferson', 'gadsden', 'liberty',
+      'franklin', 'walton', 'okaloosa', 'santa rosa', 'escambia', 'holmes', 'washington', 'bay',
+      'jackson', 'calhoun', 'gulf', 'citrus', 'hernando', 'pasco', 'pinellas', 'hillsborough', 'manatee',
+      'sarasota', 'charlotte', 'lee', 'hendry', 'glades', 'ooltowaha', 'brevard', 'volusia', 'flagler',
+      'putnam', 'st johns', 'clay', 'duval', 'nassau', 'baker', 'union', 'bradford', 'alachua', 'gilchrist',
+      'levy', 'dixie', 'lafayette', 'suwannee', 'columbia', 'hamilton', 'madison', 'taylor', 'lafayette',
+      'wakulla', 'jefferson', 'gadsden', 'liberty', 'franklin', 'walton', 'okaloosa', 'santa rosa',
+      'escambia', 'holmes', 'washington', 'bay', 'jackson', 'calhoun', 'gulf', 'citrus', 'hernando',
+      'pasco', 'pinellas', 'hillsborough', 'manatee', 'sarasota', 'charlotte', 'lee', 'hendry', 'glades',
+      'ooltowaha', 'brevard', 'volusia', 'flagler', 'putnam'
+    ];
+
+    const parsed = {
+      locationTerms: [] as string[],
+      propertyTypeTerms: [] as string[],
+      generalTerms: [] as string[]
+    };
+
+    for (let i = 0; i < terms.length; i++) {
+      const term = terms[i];
+      const normalizedTerm = normalizedTerms[i];
+
+      // Check if it's a property type
+      if (propertyTypes.includes(normalizedTerm)) {
+        parsed.propertyTypeTerms.push(normalizedTerm);
+      }
+      // Check if it's a state name or abbreviation
+      else if (stateNames.includes(normalizedTerm) || stateAbbreviations.includes(term.toUpperCase())) {
+        parsed.locationTerms.push(normalizedTerm);
+      }
+      // Check if it's a common city
+      else if (commonCities.some(city => normalizeSearchTerm(city).includes(normalizedTerm) || normalizedTerm.includes(normalizeSearchTerm(city)))) {
+        parsed.locationTerms.push(normalizedTerm);
+      }
+      // Otherwise it's a general term
+      else {
+        parsed.generalTerms.push(term);
+      }
+    }
+
+    return parsed;
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -67,6 +183,19 @@ const FeedDisplay: React.FC = () => {
 
     fetchPosts();
   }, []);
+
+  const handleRetry = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const posts = await postsService.fetchPosts();
+      setPosts(posts);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching posts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -114,51 +243,147 @@ const FeedDisplay: React.FC = () => {
     const typeMatch =
       filterType === 'ALL' ? true : post.type === filterType;
 
-    if (searchQuery.length < 3) {
-      return typeMatch;
+    // Price filter
+    let priceMatch = true;
+    if (filterPrice !== 'ALL' && post.propertyDetails?.price) {
+      const price = post.propertyDetails.price;
+      switch (filterPrice) {
+        case 'UNDER_100K':
+          priceMatch = price < 100000;
+          break;
+        case '100K_500K':
+          priceMatch = price >= 100000 && price < 500000;
+          break;
+        case '500K_1M':
+          priceMatch = price >= 500000 && price < 1000000;
+          break;
+        case '1M_5M':
+          priceMatch = price >= 1000000 && price < 5000000;
+          break;
+        case '5M_10M':
+          priceMatch = price >= 5000000 && price < 10000000;
+          break;
+        case 'OVER_10M':
+          priceMatch = price >= 10000000;
+          break;
+        default:
+          priceMatch = true;
+      }
     }
 
+    // Size filter
+    let sizeMatch = true;
+    if (filterSize !== 'ALL' && post.propertyDetails?.size) {
+      const size = post.propertyDetails.size;
+      switch (filterSize) {
+        case 'UNDER_1000':
+          sizeMatch = size < 1000;
+          break;
+        case '1000_5000':
+          sizeMatch = size >= 1000 && size < 5000;
+          break;
+        case '5000_10000':
+          sizeMatch = size >= 5000 && size < 10000;
+          break;
+        case '10000_50000':
+          sizeMatch = size >= 10000 && size < 50000;
+          break;
+        case '50000_100000':
+          sizeMatch = size >= 50000 && size < 100000;
+          break;
+        case 'OVER_100000':
+          sizeMatch = size >= 100000;
+          break;
+        default:
+          sizeMatch = true;
+      }
+    }
+
+    if (searchQuery.length < 3) {
+      return typeMatch && priceMatch && sizeMatch;
+    }
+
+    // Parse smart search terms
+    const parsedSearch = parseSmartSearch(searchQuery);
     const searchLower = searchQuery.toLowerCase();
+    const normalizedSearch = normalizeSearchTerm(searchQuery);
 
-    // Search in content
-    const contentMatch = post.content?.toLowerCase().includes(searchLower);
+    // Apply smart filters based on parsed terms
+    let smartLocationMatch = true;
+    let smartPropertyTypeMatch = true;
+    let generalTextMatch = true;
 
-    // Search in username
-    const userNameMatch = post.userName?.toLowerCase().includes(searchLower);
+    // Location filtering - check if any location terms match the property location
+    if (parsedSearch.locationTerms.length > 0 && post.propertyDetails?.location) {
+      smartLocationMatch = parsedSearch.locationTerms.some(locationTerm => {
+        const cityMatch = post.propertyDetails!.location!.city &&
+          normalizeSearchTerm(post.propertyDetails!.location!.city).includes(locationTerm);
+        const stateMatch = post.propertyDetails!.location!.state &&
+          normalizeSearchTerm(post.propertyDetails!.location!.state).includes(locationTerm);
+        const addressMatch = post.propertyDetails!.location!.address &&
+          post.propertyDetails!.location!.address.toLowerCase().includes(locationTerm);
+        return cityMatch || stateMatch || addressMatch;
+      });
+    }
 
-    // Search in tags (remove spaces, convert to lowercase)
-    const tagsMatch = post.tags?.some(tag =>
-      tag.replace(/\s+/g, '').toLowerCase().includes(searchLower)
-    );
+    // Property type filtering - check if any property type terms match
+    if (parsedSearch.propertyTypeTerms.length > 0 && post.propertyDetails?.propertyType) {
+      smartPropertyTypeMatch = parsedSearch.propertyTypeTerms.some(propertyTypeTerm =>
+        normalizeSearchTerm(post.propertyDetails!.propertyType!).includes(propertyTypeTerm)
+      );
+    }
 
-    // Search in property details
-    const propertyTypeMatch = post.propertyDetails?.propertyType?.toLowerCase().includes(searchLower);
-    const industryMatch = post.propertyDetails?.industry?.some(industry =>
-      industry.toLowerCase().includes(searchLower)
-    );
-    const locationMatch = post.propertyDetails?.location &&
-      ((post.propertyDetails.location.city?.toLowerCase().includes(searchLower)) ||
-       (post.propertyDetails.location.state?.toLowerCase().includes(searchLower)) ||
-       (post.propertyDetails.location.address?.toLowerCase().includes(searchLower)));
+    // General text search for remaining terms
+    if (parsedSearch.generalTerms.length > 0) {
+      generalTextMatch = parsedSearch.generalTerms.some(generalTerm => {
+        // Search in content
+        const contentMatch = post.content?.toLowerCase().includes(generalTerm);
+        // Search in username
+        const userNameMatch = post.userName?.toLowerCase().includes(generalTerm);
+        // Search in tags
+        const tagsMatch = post.tags?.some(tag =>
+          tag.replace(/\s+/g, '').toLowerCase().includes(generalTerm)
+        );
+        // Search in industry
+        const industryMatch = post.propertyDetails?.industry?.some(industry =>
+          industry.toLowerCase().includes(generalTerm)
+        );
 
-    const textMatch = contentMatch || userNameMatch || tagsMatch ||
-                     propertyTypeMatch || industryMatch || locationMatch;
+        return contentMatch || userNameMatch || tagsMatch || industryMatch;
+      });
+    }
 
-    return typeMatch && textMatch;
+    // Fallback to original search if no smart parsing was applied
+    if (parsedSearch.locationTerms.length === 0 && parsedSearch.propertyTypeTerms.length === 0 && parsedSearch.generalTerms.length === 0) {
+      // Search in content
+      const contentMatch = post.content?.toLowerCase().includes(searchLower) || false;
+      // Search in username
+      const userNameMatch = post.userName?.toLowerCase().includes(searchLower) || false;
+      // Search in tags
+      const tagsMatch = post.tags?.some(tag =>
+        tag.replace(/\s+/g, '').toLowerCase().includes(searchLower)
+      ) || false;
+      // Search in property details
+      const propertyTypeMatch = post.propertyDetails?.propertyType?.toLowerCase().includes(searchLower) || false;
+      const industryMatch = post.propertyDetails?.industry?.some(industry =>
+        industry.toLowerCase().includes(searchLower)
+      ) || false;
+      const locationMatch = post.propertyDetails?.location &&
+        ((post.propertyDetails.location.city && normalizeSearchTerm(post.propertyDetails.location.city).includes(normalizedSearch)) ||
+         (post.propertyDetails.location.state?.toLowerCase().includes(searchLower)) ||
+         (post.propertyDetails.location.address?.toLowerCase().includes(searchLower))) || false;
+
+      generalTextMatch = contentMatch || userNameMatch || tagsMatch ||
+                       propertyTypeMatch || industryMatch || locationMatch;
+    }
+
+    return typeMatch && priceMatch && sizeMatch && smartLocationMatch && smartPropertyTypeMatch && generalTextMatch;
   });
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
         <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <Typography color="error">{error}</Typography>
       </Box>
     );
   }
@@ -179,17 +404,6 @@ const FeedDisplay: React.FC = () => {
           position: 'relative',
         }}
       >
-        <IconButton
-          onClick={toggleTheme}
-          sx={{
-            position: 'absolute',
-            right: 16,
-            color: 'text.primary',
-          }}
-          aria-label="toggle theme"
-        >
-          {isDark ? <LightModeIcon /> : <DarkModeIcon />}
-        </IconButton>
         <Box
           component="img"
           src="/ace.svg"
@@ -212,16 +426,32 @@ const FeedDisplay: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box>
-        <SearchAndFilterBar
-          searchQuery={searchQuery}
-          filterType={filterType}
-          onSearchChange={setSearchQuery}
-          onFilterChange={setFilterType}
-          onClearSearch={() => setSearchQuery('')}
+      {error ? (
+        <ErrorDisplay
+          error={error}
+          onRetry={handleRetry}
+          loading={loading}
         />
-
+      ) : (
         <>
+          <SearchAndFilterBar
+            searchQuery={searchQuery}
+            filterType={filterType}
+            filterPrice={filterPrice}
+            filterSize={filterSize}
+            onSearchChange={setSearchQuery}
+            onFilterChange={setFilterType}
+            onPriceFilterChange={setFilterPrice}
+            onSizeFilterChange={setFilterSize}
+            onClearSearch={() => setSearchQuery('')}
+            onClearAllFilters={() => {
+              setSearchQuery('');
+              setFilterType('ALL');
+              setFilterPrice('ALL');
+              setFilterSize('ALL');
+            }}
+          />
+
           <Box
             sx={{
               display: "grid",
@@ -232,172 +462,271 @@ const FeedDisplay: React.FC = () => {
                 lg: "repeat(4, 1fr)",
               },
               gap: 2,
-              minHeight: 400,
             }}
           >
             {filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
-                <Card key={post.id} elevation={2} sx={{ borderRadius: 3 }}>
-                  <CardContent sx={{ display: "flex", flexDirection: "column" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                      <Avatar sx={{ bgcolor: "primary.main" }}>
-                        <PersonIcon />
-                      </Avatar>
-                      <Box sx={{ flexGrow: 1 }}>
-                        {post.userEmail ? (
-                          <Link
-                            href={`mailto:${post.userEmail}?subject=Re: ${encodeURIComponent(post.content.substring(0, 50))}${post.content.length > 50 ? '...' : ''}`}
-                            sx={{
-                              textDecoration: 'none',
-                              color: 'primary.main',
-                              fontWeight: 500,
-                              '&:hover': {
-                                textDecoration: 'underline',
-                              },
-                            }}
-                          >
-                            {post.userName}
-                          </Link>
-                        ) : (
-                          <Typography variant="subtitle2">{post.userName}</Typography>
-                        )}
-                      </Box>
-                      <Chip
-                        icon={getTypeIcon(post.type)}
-                        label={post.type}
-                        color={getTypeColor(post.type)}
-                        size="small"
-                      />
-                    </Box>
-                    <Typography variant="body1" sx={{ mb: 1.5 }}>
-                      {post.content}
-                    </Typography>
-
-                    {/* Compact Property Details - Inline */}
-                    {post.propertyDetails && (
-                      <Box sx={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 1,
-                        mb: 1.5,
-                        alignItems: 'center'
-                      }}>
-                        {post.propertyDetails.propertyType && (
-                          <Chip
-                            icon={<span style={{ fontSize: '0.8rem' }}>🏢</span>}
-                            label={post.propertyDetails.propertyType}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 24,
-                              fontSize: '0.7rem',
-                              borderColor: 'primary.main',
-                              color: 'primary.main',
-                              '& .MuiChip-label': { px: 1 }
-                            }}
-                          />
-                        )}
-                        {post.propertyDetails.industry && post.propertyDetails.industry.length > 0 && (
-                          <Chip
-                            icon={<span style={{ fontSize: '0.8rem' }}>💼</span>}
-                            label={post.propertyDetails.industry.slice(0, 2).join(', ')}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 24,
-                              fontSize: '0.7rem',
-                              borderColor: 'secondary.main',
-                              color: 'secondary.main',
-                              '& .MuiChip-label': { px: 1 }
-                            }}
-                          />
-                        )}
-                        {post.propertyDetails.location && (post.propertyDetails.location.city || post.propertyDetails.location.state) && (
-                          <Chip
-                            icon={<span style={{ fontSize: '0.8rem' }}>📍</span>}
-                            label={[post.propertyDetails.location.city, post.propertyDetails.location.state].filter(Boolean).join(', ')}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 24,
-                              fontSize: '0.7rem',
-                              borderColor: 'info.main',
-                              color: 'info.main',
-                              '& .MuiChip-label': { px: 1 }
-                            }}
-                          />
-                        )}
-                        {post.propertyDetails.size && (
-                          <Chip
-                            icon={<span style={{ fontSize: '0.8rem' }}>📐</span>}
-                            label={`${post.propertyDetails.size.toLocaleString()} ${post.propertyDetails.sizeUnit}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 24,
-                              fontSize: '0.7rem',
-                              borderColor: 'success.main',
-                              color: 'success.main',
-                              '& .MuiChip-label': { px: 1 }
-                            }}
-                          />
-                        )}
-                        {post.propertyDetails.price && (
-                          <Chip
-                            icon={<span style={{ fontSize: '0.8rem' }}>💰</span>}
-                            label={`$${post.propertyDetails.price.toLocaleString()}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 24,
-                              fontSize: '0.7rem',
-                              borderColor: 'warning.main',
-                              color: 'warning.main',
-                              '& .MuiChip-label': { px: 1 }
-                            }}
-                          />
-                        )}
-                      </Box>
-                    )}
-
-                    {/* Enhanced Tags Section */}
-                    {post.tags && post.tags.length > 0 && (
-                      <Box sx={{ mb: post.imageUrl ? 1.5 : 0 }}>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {post.tags.map((tag, index) => (
-                            <Chip
-                              key={index}
-                              label={`#${tag}`}
-                              size="small"
-                              variant="filled"
-                              sx={{
-                                height: 22,
-                                fontSize: '0.65rem',
-                                fontWeight: 500,
-                                bgcolor: isDark ? 'grey.700' : 'grey.300',
-                                color: isDark ? 'grey.100' : 'grey.800',
-                                borderRadius: 1,
-                                '& .MuiChip-label': { px: 0.8, py: 0.2 }
-                              }}
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
-
-                    {post.imageUrl && (
+                <Card key={post.id} elevation={2} sx={{ borderRadius: 3, position: 'relative', overflow: 'hidden', maxHeight: 300, display: 'flex', flexDirection: 'column' }}>
+                  {/* Top 70% - Image with Overlay */}
+                  <Box sx={{ position: 'relative', height: '70%', flexShrink: 0 }}>
+                    {post.imageUrl ? (
                       <CardMedia
                         component="img"
                         image={post.imageUrl}
                         alt="Post image"
                         sx={{
                           width: "100%",
-                          height: 200,
+                          height: "100%",
                           objectFit: "cover",
-                          borderRadius: 2,
+                        }}
+                      />
+                    ) : (
+                      <CardMedia
+                        component="img"
+                        image="/no-image.png"
+                        alt="No image available"
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          opacity: 0.7,
                         }}
                       />
                     )}
+
+                    {/* Overlay Content on Image */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%)',
+                        color: 'white',
+                        p: 2,
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
+                      {/* Top Section - Profile Info and Deal Type */}
+                      <Box sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1,
+                      }}>
+                        <Avatar sx={{
+                          bgcolor: "rgba(255,255,255,0.2)",
+                          width: 32,
+                          height: 32
+                        }}>
+                          <PersonIcon sx={{ fontSize: 16 }} />
+                        </Avatar>
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          {post.userEmail ? (
+                            <Link
+                              href={`mailto:${post.userEmail}?subject=Re: ${encodeURIComponent(post.content.substring(0, 50))}${post.content.length > 50 ? '...' : ''}`}
+                              sx={{
+                                textDecoration: 'none',
+                                color: 'white',
+                                fontWeight: 500,
+                                fontSize: '0.875rem',
+                                '&:hover': {
+                                  textDecoration: 'underline',
+                                },
+                              }}
+                            >
+                              {post.userName}
+                            </Link>
+                          ) : (
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                color: 'white',
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {post.userName}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Chip
+                          icon={getTypeIcon(post.type)}
+                          label={post.type}
+                          color={getTypeColor(post.type)}
+                          size="small"
+                          sx={{
+                            fontSize: '0.7rem',
+                            height: 24,
+                            '& .MuiChip-label': { px: 1 }
+                          }}
+                        />
+                      </Box>
+
+                      {/* Property Type, Industry, and Location - Right below profile */}
+                      {post.propertyDetails && (
+                        <Box sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 0.5,
+                          mb: 'auto', // Push to create space
+                        }}>
+                          {post.propertyDetails.propertyType && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.7rem' }}>🏢</span>}
+                              label={post.propertyDetails.propertyType}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.65rem',
+                                borderColor: 'rgba(255,255,255,0.3)',
+                                color: 'white',
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                '& .MuiChip-label': { px: 0.8 }
+                              }}
+                            />
+                          )}
+                          {post.propertyDetails.industry && post.propertyDetails.industry.length > 0 && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.7rem' }}>💼</span>}
+                              label={post.propertyDetails.industry.slice(0, 2).join(', ')}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.65rem',
+                                borderColor: 'rgba(255,255,255,0.3)',
+                                color: 'white',
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                '& .MuiChip-label': { px: 0.8 }
+                              }}
+                            />
+                          )}
+                          {post.propertyDetails.location && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.7rem' }}>📍</span>}
+                              label={`${post.propertyDetails.location.city}, ${post.propertyDetails.location.state}`}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.65rem',
+                                borderColor: 'rgba(255,255,255,0.3)',
+                                color: 'white',
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                '& .MuiChip-label': { px: 0.8 }
+                              }}
+                            />
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+
+                  {/* Bottom 30% - Details Section */}
+                  <CardContent sx={{ height: '30%', p: 1.5, display: 'flex', flexDirection: 'column' }}>
+                    {/* Description */}
+                    <Tooltip title={post.content} placement="top">
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 0.5,
+                          fontSize: '0.85rem',
+                          lineHeight: 1.1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {post.content}
+                      </Typography>
+                    </Tooltip>
+
+                    {/* Size, Price, and Tags */}
+                    <Box sx={{ mt: 'auto' }}>
+                      {/* Size and Price */}
+                      {post.propertyDetails && (
+                        <Box sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 0.5,
+                          mb: 0.5
+                        }}>
+                          {post.propertyDetails.size && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.7rem' }}>📐</span>}
+                              label={`${post.propertyDetails.size.toLocaleString()} ${post.propertyDetails.sizeUnit}`}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.65rem',
+                                borderColor: 'success.main',
+                                color: 'success.main',
+                                '& .MuiChip-label': { px: 0.8 }
+                              }}
+                            />
+                          )}
+                          {post.propertyDetails.price && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.7rem' }}>💰</span>}
+                              label={`$${post.propertyDetails.price.toLocaleString()}`}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.65rem',
+                                borderColor: 'warning.main',
+                                color: 'warning.main',
+                                '& .MuiChip-label': { px: 0.8 }
+                              }}
+                            />
+                          )}
+                        </Box>
+                      )}
+
+                      {/* Tags */}
+                      {post.tags && post.tags.length > 0 && (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3 }}>
+                          {post.tags.slice(0, 4).map((tag, index) => (
+                            <Chip
+                              key={index}
+                              label={`#${tag}`}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                fontSize: '0.6rem',
+                                fontWeight: 500,
+                                bgcolor: isDark ? 'grey.700' : 'grey.300',
+                                color: isDark ? 'grey.100' : 'grey.800',
+                                borderRadius: 0.5,
+                                '& .MuiChip-label': { px: 0.6, py: 0.1 }
+                              }}
+                            />
+                          ))}
+                          {post.tags.length > 4 && (
+                            <Chip
+                              label={`+${post.tags.length - 4}`}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                fontSize: '0.6rem',
+                                fontWeight: 500,
+                                bgcolor: isDark ? 'grey.700' : 'grey.300',
+                                color: isDark ? 'grey.100' : 'grey.800',
+                                borderRadius: 0.5,
+                                '& .MuiChip-label': { px: 0.6, py: 0.1 }
+                              }}
+                            />
+                          )}
+                        </Box>
+                      )}
+                    </Box>
                   </CardContent>
                 </Card>
               ))
@@ -408,7 +737,7 @@ const FeedDisplay: React.FC = () => {
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  minHeight: 200,
+                  minHeight: 150,
                   textAlign: 'center',
                 }}
               >
@@ -466,7 +795,7 @@ const FeedDisplay: React.FC = () => {
             <Paper sx={{ p: 2, position: 'relative' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="h6">
-                  Create New Post
+                  Create Property Deal
                 </Typography>
                 <IconButton
                   onClick={handleClosePopover}
@@ -488,10 +817,7 @@ const FeedDisplay: React.FC = () => {
             </Paper>
           </Popover>
         </>
-        );
-
-
-      </Box>
+      )}
     </Box>
   );
 };

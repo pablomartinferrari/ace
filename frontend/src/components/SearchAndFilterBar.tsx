@@ -1,13 +1,12 @@
 import React from 'react';
 import {
-  AppBar,
-  Toolbar,
+  Box,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Box,
+  Paper,
   type SelectChangeEvent,
 } from '@mui/material';
 import {
@@ -15,23 +14,34 @@ import {
   CheckCircle as HaveIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
+  ClearAll as ClearAllIcon,
 } from '@mui/icons-material';
 import type { PostType } from '../../../shared/types';
 
 interface SearchAndFilterBarProps {
   searchQuery: string;
   filterType: PostType | 'ALL';
+  filterPrice: string;
+  filterSize: string;
   onSearchChange: (value: string) => void;
   onFilterChange: (value: PostType | 'ALL') => void;
+  onPriceFilterChange: (value: string) => void;
+  onSizeFilterChange: (value: string) => void;
   onClearSearch: () => void;
+  onClearAllFilters: () => void;
 }
 
 const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   searchQuery,
   filterType,
+  filterPrice,
+  filterSize,
   onSearchChange,
   onFilterChange,
+  onPriceFilterChange,
+  onSizeFilterChange,
   onClearSearch,
+  onClearAllFilters,
 }) => {
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSearchChange(event.target.value);
@@ -41,13 +51,20 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
     onFilterChange(event.target.value as PostType | 'ALL');
   };
 
+  const handlePriceFilterChange = (event: SelectChangeEvent) => {
+    onPriceFilterChange(event.target.value);
+  };
+
+  const handleSizeFilterChange = (event: SelectChangeEvent) => {
+    onSizeFilterChange(event.target.value);
+  };
+
   return (
-    <AppBar position="static" color="default" elevation={1} sx={{ mb: 2 }}>
-      <Toolbar sx={{ gap: 2 }}>
+    <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         <TextField
-          fullWidth
           size="small"
-          placeholder="Search posts..."
+          placeholder="Search property deals..."
           value={searchQuery}
           onChange={handleSearchChange}
           InputProps={{
@@ -62,13 +79,13 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
               </Box>
             ),
           }}
-          sx={{ flexGrow: 1 }}
+          sx={{ flexGrow: 1, minWidth: 200 }}
         />
         <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel>Filter</InputLabel>
+          <InputLabel>Type</InputLabel>
           <Select
             value={filterType}
-            label="Filter"
+            label="Type"
             onChange={handleFilterChange}
           >
             <MenuItem value="ALL">All Posts</MenuItem>
@@ -86,8 +103,54 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             </MenuItem>
           </Select>
         </FormControl>
-      </Toolbar>
-    </AppBar>
+        <FormControl size="small" sx={{ minWidth: 140 }}>
+          <InputLabel>Price Range</InputLabel>
+          <Select
+            value={filterPrice}
+            label="Price Range"
+            onChange={handlePriceFilterChange}
+          >
+            <MenuItem value="ALL">Any Price</MenuItem>
+            <MenuItem value="UNDER_100K">Under $100K</MenuItem>
+            <MenuItem value="100K_500K">$100K - $500K</MenuItem>
+            <MenuItem value="500K_1M">$500K - $1M</MenuItem>
+            <MenuItem value="1M_5M">$1M - $5M</MenuItem>
+            <MenuItem value="5M_10M">$5M - $10M</MenuItem>
+            <MenuItem value="OVER_10M">Over $10M</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 140 }}>
+          <InputLabel>Size Range</InputLabel>
+          <Select
+            value={filterSize}
+            label="Size Range"
+            onChange={handleSizeFilterChange}
+          >
+            <MenuItem value="ALL">Any Size</MenuItem>
+            <MenuItem value="UNDER_1000">Under 1,000 sq ft</MenuItem>
+            <MenuItem value="1000_5000">1,000 - 5,000 sq ft</MenuItem>
+            <MenuItem value="5000_10000">5,000 - 10,000 sq ft</MenuItem>
+            <MenuItem value="10000_50000">10,000 - 50,000 sq ft</MenuItem>
+            <MenuItem value="50000_100000">50,000 - 100,000 sq ft</MenuItem>
+            <MenuItem value="OVER_100000">Over 100,000 sq ft</MenuItem>
+          </Select>
+        </FormControl>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer',
+            p: 1,
+            borderRadius: 1,
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+          onClick={onClearAllFilters}
+          title="Clear all filters"
+        >
+          <ClearAllIcon sx={{ color: 'text.secondary' }} />
+        </Box>
+      </Box>
+    </Paper>
   );
 };
 
