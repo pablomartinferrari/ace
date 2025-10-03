@@ -20,6 +20,7 @@ import {
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
+import NavigationBar from './NavigationBar';
 
 interface UserProfile {
   id: string;
@@ -112,28 +113,36 @@ const ProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-          <CircularProgress />
-        </Box>
-      </Container>
+      <>
+        <NavigationBar />
+        <Container maxWidth="md" sx={{ py: 4 }}>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+            <CircularProgress />
+          </Box>
+        </Container>
+      </>
     );
   }
 
   if (error || !profile) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-          <Alert severity="error">
-            {error || 'Profile not found'}
-          </Alert>
-        </Box>
-      </Container>
+      <>
+        <NavigationBar />
+        <Container maxWidth="md" sx={{ py: 4 }}>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+            <Alert severity="error">
+              {error || 'Profile not found'}
+            </Alert>
+          </Box>
+        </Container>
+      </>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <>
+      <NavigationBar />
+      <Container maxWidth="md" sx={{ py: 4 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Button
@@ -144,7 +153,7 @@ const ProfilePage: React.FC = () => {
           Back
         </Button>
 
-        <Typography variant="h4" component="h1" gutterBottom align="center">
+        <Typography variant="h3" component="h1" gutterBottom align="center">
           Realtor Profile
         </Typography>
       </Box>
@@ -167,7 +176,7 @@ const ProfilePage: React.FC = () => {
             {profile.isRealtor && profile.company && (
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <BusinessIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                <Typography variant="h6" color="text.secondary">
+                <Typography variant="subtitle1" color="text.secondary" fontWeight={600}>
                   {profile.company}
                 </Typography>
               </Box>
@@ -176,7 +185,7 @@ const ProfilePage: React.FC = () => {
             {profile.isRealtor && profile.licenseNumber && (
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <BadgeIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                <Typography variant="body1" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   License: {profile.licenseNumber}
                 </Typography>
               </Box>
@@ -282,7 +291,8 @@ const ProfilePage: React.FC = () => {
           </Typography>
         </Box>
       </Paper>
-    </Container>
+      </Container>
+    </>
   );
 };
 

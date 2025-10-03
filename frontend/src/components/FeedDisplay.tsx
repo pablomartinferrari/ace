@@ -6,6 +6,7 @@ import {
   Typography,
   Chip,
   Box,
+  Container,
   Alert,
   CircularProgress,
   Avatar,
@@ -25,6 +26,7 @@ import {
   Add as AddIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
+import { alpha } from "@mui/material/styles";
 import type { Post, PostType } from '../../../shared/types';
 import SearchAndFilterBar from './SearchAndFilterBar';
 import CreatePostForm, { type CreatePostFormData } from './CreatePostForm';
@@ -32,6 +34,7 @@ import ErrorDisplay from './ErrorDisplay';
 import { postsService, type CreatePostData } from '../services/postsService';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import NavigationBar from './NavigationBar';
 
 const ACRES_TO_SQFT = 43560;
 
@@ -398,91 +401,85 @@ const FeedDisplay: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
+      <Box
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <NavigationBar />
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: { xs: 3, md: 4 },
+          }}
+        >
+          <CircularProgress />
+        </Box>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
-      {/* Header with ACE logo and slogan */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 2,
-          py: 3,
-          mb: 2,
-          bgcolor: 'transparent',
-          borderRadius: 2,
-          position: 'relative',
-        }}
-      >
-        <Box
-          component="img"
-          src="/ace.svg"
-          alt="ACE Logo"
-          sx={{
-            height: 48,
-            width: 'auto',
-          }}
-        />
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{
-            fontWeight: 'bold',
-            textAlign: 'center',
-            color: 'text.primary',
-          }}
-        >
-          Be the ACE of deals!
-        </Typography>
-      </Box>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <NavigationBar />
+      <Box component="main" sx={{ flex: 1, py: { xs: 3, md: 4 } }}>
+        {error ? (
+          <Container maxWidth="md">
+            <ErrorDisplay error={error} onRetry={handleRetry} loading={loading} />
+          </Container>
+        ) : (
+          <>
+            <Container
+              maxWidth="xl"
+              sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+            >
+              <SearchAndFilterBar
+                searchQuery={searchQuery}
+                filterType={filterType}
+                filterPrice={filterPrice}
+                filterSize={filterSize}
+                onSearchChange={setSearchQuery}
+                onFilterChange={setFilterType}
+                onPriceFilterChange={setFilterPrice}
+                onSizeFilterChange={setFilterSize}
+                onClearSearch={() => setSearchQuery('')}
+                onClearAllFilters={() => {
+                  setSearchQuery('');
+                  setFilterType('ALL');
+                  setFilterPrice('ALL');
+                  setFilterSize('ALL');
+                }}
+              />
 
-      {error ? (
-        <ErrorDisplay
-          error={error}
-          onRetry={handleRetry}
-          loading={loading}
-        />
-      ) : (
-        <>
-          <SearchAndFilterBar
-            searchQuery={searchQuery}
-            filterType={filterType}
-            filterPrice={filterPrice}
-            filterSize={filterSize}
-            onSearchChange={setSearchQuery}
-            onFilterChange={setFilterType}
-            onPriceFilterChange={setFilterPrice}
-            onSizeFilterChange={setFilterSize}
-            onClearSearch={() => setSearchQuery('')}
-            onClearAllFilters={() => {
-              setSearchQuery('');
-              setFilterType('ALL');
-              setFilterPrice('ALL');
-              setFilterSize('ALL');
-            }}
-          />
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: "repeat(3, 1fr)",
-                lg: "repeat(4, 1fr)",
-              },
-              gap: 2,
-            }}
-          >
-            {filteredPosts.length > 0 ? (
-              filteredPosts.map((post) => (
-                <Card key={post.id} elevation={2} sx={{ borderRadius: 3, position: 'relative', overflow: 'hidden', maxHeight: 300, display: 'flex', flexDirection: 'column' }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                    lg: 'repeat(4, 1fr)',
+                  },
+                  gap: 3,
+                }}
+              >
+                {filteredPosts.length > 0 ? (
+                  filteredPosts.map((post) => (
+                    <Card key={post.id} elevation={2} sx={{ borderRadius: 3, position: 'relative', overflow: 'hidden', maxHeight: 300, display: 'flex', flexDirection: 'column' }}>
                   {/* Top 70% - Image with Overlay */}
                   <Box sx={{ position: 'relative', height: '70%', flexShrink: 0 }}>
                     {post.imageUrl ? (
@@ -512,18 +509,18 @@ const FeedDisplay: React.FC = () => {
 
                     {/* Overlay Content on Image */}
                     <Box
-                      sx={{
+                      sx={(theme) => ({
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%)',
-                        color: 'white',
+                        background: `linear-gradient(to bottom, ${alpha(theme.palette.common.black, 0.1)} 0%, ${alpha(theme.palette.common.black, 0.72)} 100%)`,
+                        color: theme.palette.common.white,
                         p: 2,
                         display: 'flex',
                         flexDirection: 'column',
-                      }}
+                      })}
                     >
                       {/* Top Section - Profile Info and Deal Type */}
                       <Box sx={{
@@ -551,14 +548,11 @@ const FeedDisplay: React.FC = () => {
                           {post.userEmail ? (
                             <Link
                               href={`mailto:${post.userEmail}?subject=Re: ${encodeURIComponent(post.content.substring(0, 50))}${post.content.length > 50 ? '...' : ''}`}
+                              underline="hover"
+                              variant="subtitle2"
                               sx={{
-                                textDecoration: 'none',
-                                color: 'white',
-                                fontWeight: 500,
-                                fontSize: '0.875rem',
-                                '&:hover': {
-                                  textDecoration: 'underline',
-                                },
+                                color: 'inherit',
+                                fontWeight: 600,
                               }}
                             >
                               {post.userName}
@@ -567,8 +561,8 @@ const FeedDisplay: React.FC = () => {
                             <Typography
                               variant="subtitle2"
                               sx={{
-                                color: 'white',
-                                fontSize: '0.875rem'
+                                color: 'inherit',
+                                fontWeight: 600,
                               }}
                             >
                               {post.userName}
@@ -593,55 +587,61 @@ const FeedDisplay: React.FC = () => {
                         <Box sx={{
                           display: 'flex',
                           flexWrap: 'wrap',
-                          gap: 0.5,
-                          mb: 'auto', // Push to create space
+                          gap: 1,
+                          mb: 'auto',
                         }}>
                           {post.propertyDetails.propertyType && (
                             <Chip
-                              icon={<span style={{ fontSize: '0.7rem' }}>🏢</span>}
+                              icon={<span style={{ fontSize: '0.75rem' }}>🏢</span>}
                               label={post.propertyDetails.propertyType}
                               size="small"
                               variant="outlined"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                                borderColor: 'rgba(255,255,255,0.3)',
-                                color: 'white',
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                '& .MuiChip-label': { px: 0.8 }
-                              }}
+                              sx={(theme) => ({
+                                height: 24,
+                                borderColor: alpha(theme.palette.common.white, 0.4),
+                                color: theme.palette.common.white,
+                                backgroundColor: alpha(theme.palette.common.white, 0.12),
+                                '& .MuiChip-label': {
+                                  ...theme.typography.caption,
+                                  px: 1,
+                                },
+                              })}
                             />
                           )}
                           {post.propertyDetails.industry && post.propertyDetails.industry.length > 0 && (
                             <Chip
-                              icon={<span style={{ fontSize: '0.7rem' }}>💼</span>}
+                              icon={<span style={{ fontSize: '0.75rem' }}>💼</span>}
                               label={post.propertyDetails.industry.slice(0, 2).join(', ')}
                               size="small"
                               variant="outlined"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                                borderColor: 'rgba(255,255,255,0.3)',
-                                color: 'white',
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                '& .MuiChip-label': { px: 0.8 }
-                              }}
+                              sx={(theme) => ({
+                                height: 24,
+                                borderColor: alpha(theme.palette.common.white, 0.4),
+                                color: theme.palette.common.white,
+                                backgroundColor: alpha(theme.palette.common.white, 0.12),
+                                '& .MuiChip-label': {
+                                  ...theme.typography.caption,
+                                  px: 1,
+                                },
+                              })}
                             />
                           )}
                           {post.propertyDetails.location && (
                             <Chip
-                              icon={<span style={{ fontSize: '0.7rem' }}>📍</span>}
+                              icon={<span style={{ fontSize: '0.75rem' }}>📍</span>}
                               label={`${post.propertyDetails.location.city}, ${post.propertyDetails.location.state}`}
                               size="small"
                               variant="outlined"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                                borderColor: 'rgba(255,255,255,0.3)',
-                                color: 'white',
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                '& .MuiChip-label': { px: 0.8 }
-                              }}
+                              sx={(theme) => ({
+                                height: 24,
+                                borderColor: alpha(theme.palette.common.white, 0.4),
+                                color: theme.palette.common.white,
+                                backgroundColor: alpha(theme.palette.common.white, 0.12),
+                                '& .MuiChip-label': {
+                                  ...theme.typography.caption,
+                                  px: 1,
+                                },
+                              })}
                             />
                           )}
                         </Box>
@@ -650,21 +650,16 @@ const FeedDisplay: React.FC = () => {
                   </Box>
 
                   {/* Bottom 30% - Details Section */}
-                  <CardContent sx={{ height: '30%', p: 1.5, display: 'flex', flexDirection: 'column' }}>
+                  <CardContent sx={{ height: '30%', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {/* Description */}
                     <Tooltip title={post.content} placement="top">
                       <Typography
                         variant="body2"
+                        noWrap
                         sx={{
-                          mb: 0.5,
-                          fontSize: '0.85rem',
-                          lineHeight: 1.1,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
                           cursor: 'pointer',
                           textAlign: 'left',
-                          flexShrink: 0,
+                          fontWeight: 500,
                         }}
                       >
                         {post.content}
@@ -672,14 +667,13 @@ const FeedDisplay: React.FC = () => {
                     </Tooltip>
 
                     {/* Size, Price, and Tags */}
-                    <Box sx={{ mt: 'auto' }}>
+                    <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
                       {/* Size and Price */}
                       {post.propertyDetails && (
                         <Box sx={{
                           display: 'flex',
                           flexWrap: 'wrap',
-                          gap: 0.5,
-                          mb: 0.5
+                          gap: 1,
                         }}>
                           {post.propertyDetails.size && (
                             <Chip
@@ -687,13 +681,15 @@ const FeedDisplay: React.FC = () => {
                               label={`${post.propertyDetails.size.toLocaleString()} ${post.propertyDetails.sizeUnit}`}
                               size="small"
                               variant="outlined"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                                borderColor: 'success.main',
-                                color: 'success.main',
-                                '& .MuiChip-label': { px: 0.8 }
-                              }}
+                              sx={(theme) => ({
+                                height: 28,
+                                borderColor: theme.palette.success.main,
+                                color: theme.palette.success.main,
+                                '& .MuiChip-label': {
+                                  ...theme.typography.caption,
+                                  px: 1,
+                                },
+                              })}
                             />
                           )}
                           {post.propertyDetails.price && (
@@ -702,13 +698,15 @@ const FeedDisplay: React.FC = () => {
                               label={`$${post.propertyDetails.price.toLocaleString()}`}
                               size="small"
                               variant="outlined"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                                borderColor: 'warning.main',
-                                color: 'warning.main',
-                                '& .MuiChip-label': { px: 0.8 }
-                              }}
+                              sx={(theme) => ({
+                                height: 28,
+                                borderColor: theme.palette.warning.main,
+                                color: theme.palette.warning.main,
+                                '& .MuiChip-label': {
+                                  ...theme.typography.caption,
+                                  px: 1,
+                                },
+                              })}
                             />
                           )}
                         </Box>
@@ -716,36 +714,36 @@ const FeedDisplay: React.FC = () => {
 
                       {/* Tags */}
                       {post.tags && post.tags.length > 0 && (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {post.tags.slice(0, 4).map((tag, index) => (
                             <Chip
                               key={index}
                               label={`#${tag}`}
                               size="small"
-                              sx={{
-                                height: 18,
-                                fontSize: '0.6rem',
-                                fontWeight: 500,
-                                bgcolor: isDark ? 'grey.700' : 'grey.300',
-                                color: isDark ? 'grey.100' : 'grey.800',
-                                borderRadius: 0.5,
-                                '& .MuiChip-label': { px: 0.6, py: 0.1 }
-                              }}
+                              sx={(theme) => ({
+                                height: 24,
+                                bgcolor: isDark ? theme.palette.grey[700] : theme.palette.grey[300],
+                                color: isDark ? theme.palette.grey[100] : theme.palette.grey[800],
+                                '& .MuiChip-label': {
+                                  ...theme.typography.caption,
+                                  px: 0.75,
+                                },
+                              })}
                             />
                           ))}
                           {post.tags.length > 4 && (
                             <Chip
                               label={`+${post.tags.length - 4}`}
                               size="small"
-                              sx={{
-                                height: 18,
-                                fontSize: '0.6rem',
-                                fontWeight: 500,
-                                bgcolor: isDark ? 'grey.700' : 'grey.300',
-                                color: isDark ? 'grey.100' : 'grey.800',
-                                borderRadius: 0.5,
-                                '& .MuiChip-label': { px: 0.6, py: 0.1 }
-                              }}
+                              sx={(theme) => ({
+                                height: 24,
+                                bgcolor: isDark ? theme.palette.grey[700] : theme.palette.grey[300],
+                                color: isDark ? theme.palette.grey[100] : theme.palette.grey[800],
+                                '& .MuiChip-label': {
+                                  ...theme.typography.caption,
+                                  px: 0.75,
+                                },
+                              })}
                             />
                           )}
                         </Box>
@@ -771,6 +769,7 @@ const FeedDisplay: React.FC = () => {
               </Box>
             )}
           </Box>
+          </Container>
 
           {/* Floating Action Button */}
           <Fab
@@ -838,8 +837,9 @@ const FeedDisplay: React.FC = () => {
               </Box>
             </Paper>
           </Popover>
-        </>
-      )}
+          </>
+        )}
+      </Box>
     </Box>
   );
 };

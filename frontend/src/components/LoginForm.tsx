@@ -94,14 +94,24 @@ const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" color="primary">
-          Welcome Back
-        </Typography>
-        <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 3 }}>
-          Sign in to your ACE account
-        </Typography>
+    <Container maxWidth="sm" sx={{ py: 8 }}>
+      <Paper
+        elevation={3}
+        sx={{
+          p: { xs: 4, md: 5 },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+        }}
+      >
+        <Box textAlign="center">
+          <Typography variant="h4" component="h1" color="primary" gutterBottom>
+            Welcome Back
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Sign in to your ACE account
+          </Typography>
+        </Box>
 
         {error && (
           <Alert 
@@ -120,7 +130,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit}>
+  <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
             fullWidth
             label="Email Address"
@@ -152,7 +162,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             size="large"
             startIcon={submitting ? <CircularProgress size={20} /> : <LoginIcon />}
             disabled={submitting}
-            sx={{ mt: 3, mb: 2 }}
+            sx={{ mt: 1 }}
           >
             {submitting ? 'Signing In...' : 'Sign In'}
           </Button>

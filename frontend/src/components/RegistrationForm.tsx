@@ -210,13 +210,15 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           overflow: 'hidden'
         }}
       >
-        <Box sx={{ flex: 1, overflowY: 'auto', width: '100%', maxWidth: 720, mx: 'auto' }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center" color="primary">
-            Join ACE Community
-          </Typography>
-          <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 2 }}>
-            Create your account to start sharing
-          </Typography>
+        <Box sx={{ flex: 1, overflowY: 'auto', width: '100%', maxWidth: 720, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box textAlign="center">
+            <Typography variant="h4" component="h1" color="primary" gutterBottom>
+              Join ACE Community
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Create your account to start sharing
+            </Typography>
+          </Box>
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -224,7 +226,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} pb={4}>
+          <Box component="form" onSubmit={handleSubmit} pb={4} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Profile Picture Section - Compact Layout */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
             <Box sx={{ position: 'relative' }}>

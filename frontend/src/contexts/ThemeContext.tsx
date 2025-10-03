@@ -1,6 +1,73 @@
 import { createTheme, type Theme } from '@mui/material/styles';
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
+const sharedTypography = {
+  fontFamily: '"Roboto", "Helvetica Neue", "Arial", sans-serif',
+  h1: {
+    fontSize: '3rem',
+    fontWeight: 700,
+    lineHeight: 1.2,
+    letterSpacing: '-0.015em',
+  },
+  h2: {
+    fontSize: '2.25rem',
+    fontWeight: 700,
+    lineHeight: 1.25,
+    letterSpacing: '-0.01em',
+  },
+  h3: {
+    fontSize: '1.75rem',
+    fontWeight: 600,
+    lineHeight: 1.3,
+  },
+  h4: {
+    fontSize: '1.5rem',
+    fontWeight: 600,
+    lineHeight: 1.35,
+  },
+  h5: {
+    fontSize: '1.25rem',
+    fontWeight: 500,
+    lineHeight: 1.4,
+  },
+  h6: {
+    fontSize: '1.125rem',
+    fontWeight: 600,
+    letterSpacing: '0.02em',
+  },
+  subtitle1: {
+    fontSize: '1.0625rem',
+    fontWeight: 500,
+    lineHeight: 1.4,
+  },
+  subtitle2: {
+    fontSize: '0.9375rem',
+    fontWeight: 500,
+    letterSpacing: '0.02em',
+  },
+  body1: {
+    fontSize: '1rem',
+    lineHeight: 1.6,
+  },
+  body2: {
+    fontSize: '0.875rem',
+    lineHeight: 1.5,
+  },
+  caption: {
+    fontSize: '0.75rem',
+    letterSpacing: '0.03em',
+  },
+  button: {
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+  },
+  overline: {
+    fontSize: '0.75rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase' as const,
+  },
+};
+
 // Light theme configuration
 export const lightTheme = createTheme({
   palette: {
@@ -17,13 +84,7 @@ export const lightTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h3: {
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 500,
-    },
+    ...sharedTypography,
   },
   shape: {
     borderRadius: 8,
@@ -44,7 +105,25 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: 8,
+          padding: '0.625rem 1.5rem',
+        },
+      },
+    },
+    MuiLink: {
+      styleOverrides: {
+        root: {
           fontWeight: 500,
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+          fontWeight: 500,
+          letterSpacing: '0.02em',
         },
       },
     },
@@ -67,13 +146,7 @@ export const darkTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h3: {
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 500,
-    },
+    ...sharedTypography,
   },
   shape: {
     borderRadius: 8,
@@ -94,7 +167,25 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: 8,
+          padding: '0.625rem 1.5rem',
+        },
+      },
+    },
+    MuiLink: {
+      styleOverrides: {
+        root: {
           fontWeight: 500,
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+          fontWeight: 500,
+          letterSpacing: '0.02em',
         },
       },
     },

@@ -7,6 +7,9 @@ import {
   Select,
   MenuItem,
   Paper,
+  Stack,
+  IconButton,
+  Tooltip,
   type SelectChangeEvent,
 } from '@mui/material';
 import {
@@ -60,8 +63,14 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   };
 
   return (
-    <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+    <Paper elevation={1} sx={{ p: 3, mb: 3, bgcolor: 'background.paper' }}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        useFlexGap
+        sx={{ flexWrap: 'wrap' }}
+      >
         <TextField
           size="small"
           placeholder="Search property deals..."
@@ -79,9 +88,9 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
               </Box>
             ),
           }}
-          sx={{ flexGrow: 1, minWidth: 200 }}
+          sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: 240 } }}
         />
-        <FormControl size="small" sx={{ minWidth: 120 }}>
+        <FormControl size="small" fullWidth sx={{ minWidth: { xs: '100%', sm: 160 }, maxWidth: 200 }}>
           <InputLabel>Type</InputLabel>
           <Select
             value={filterType}
@@ -103,7 +112,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             </MenuItem>
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
+        <FormControl size="small" fullWidth sx={{ minWidth: { xs: '100%', sm: 180 }, maxWidth: 220 }}>
           <InputLabel>Price Range</InputLabel>
           <Select
             value={filterPrice}
@@ -119,7 +128,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             <MenuItem value="OVER_10M">Over $10M</MenuItem>
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
+        <FormControl size="small" fullWidth sx={{ minWidth: { xs: '100%', sm: 180 }, maxWidth: 220 }}>
           <InputLabel>Size Range</InputLabel>
           <Select
             value={filterSize}
@@ -135,21 +144,19 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             <MenuItem value="OVER_100000">Over 100,000 sq ft</MenuItem>
           </Select>
         </FormControl>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            cursor: 'pointer',
-            p: 1,
-            borderRadius: 1,
-            '&:hover': { bgcolor: 'action.hover' },
-          }}
-          onClick={onClearAllFilters}
-          title="Clear all filters"
-        >
-          <ClearAllIcon sx={{ color: 'text.secondary' }} />
-        </Box>
-      </Box>
+        <Tooltip title="Clear all filters">
+          <IconButton
+            color="inherit"
+            onClick={onClearAllFilters}
+            sx={{
+              alignSelf: { xs: 'flex-end', md: 'center' },
+              color: 'text.secondary',
+            }}
+          >
+            <ClearAllIcon />
+          </IconButton>
+        </Tooltip>
+      </Stack>
     </Paper>
   );
 };
