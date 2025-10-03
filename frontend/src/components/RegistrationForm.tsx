@@ -9,7 +9,6 @@
 
 import React, { useState } from 'react';
 import {
-  Container,
   Typography,
   TextField,
   Button,
@@ -196,22 +195,36 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: 3, maxWidth: 600, mx: 'auto' }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" color="primary">
-          Join ACE Community
-        </Typography>
-        <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 2 }}>
-          Create your account to start sharing
-        </Typography>
+    <Box sx={{ minHeight: '100vh', width: '100vw', bgcolor: 'background.default' }}>
+      <Paper
+        elevation={3}
+        square
+        sx={{
+          minHeight: '100vh',
+          width: '100vw',
+          borderRadius: 0,
+          p: { xs: 2, sm: 4 },
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
+        <Box sx={{ flex: 1, overflowY: 'auto', width: '100%', maxWidth: 720, mx: 'auto' }}>
+          <Typography variant="h4" component="h1" gutterBottom align="center" color="primary">
+            Join ACE Community
+          </Typography>
+          <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 2 }}>
+            Create your account to start sharing
+          </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        <Box component="form" onSubmit={handleSubmit}>
+          <Box component="form" onSubmit={handleSubmit} pb={4}>
           {/* Profile Picture Section - Compact Layout */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
             <Box sx={{ position: 'relative' }}>
@@ -461,8 +474,9 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </Link>
           </Typography>
         )}
-      </Paper>
-    </Container>
+          </Box>
+        </Paper>
+      </Box>
   );
 };
 

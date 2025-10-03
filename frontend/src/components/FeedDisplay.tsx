@@ -33,6 +33,16 @@ import { postsService, type CreatePostData } from '../services/postsService';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
+const ACRES_TO_SQFT = 43560;
+
+const getSizeInSqft = (details?: Post['propertyDetails']): number | null => {
+  if (!details?.size || Number.isNaN(details.size)) return null;
+  if (details.sizeUnit === 'acres') {
+    return details.size * ACRES_TO_SQFT;
+  }
+  return details.size;
+};
+
 const getTypeIcon = (type: PostType) =>
   type === "NEED" ? <NeedIcon /> : <HaveIcon />;
 const getTypeColor = (type: PostType) =>
@@ -275,8 +285,11 @@ const FeedDisplay: React.FC = () => {
 
     // Size filter
     let sizeMatch = true;
-    if (filterSize !== 'ALL' && post.propertyDetails?.size) {
-      const size = post.propertyDetails.size;
+    if (filterSize !== 'ALL') {
+      const size = getSizeInSqft(post.propertyDetails);
+      if (size === null) {
+        sizeMatch = false;
+      } else {
       switch (filterSize) {
         case 'UNDER_1000':
           sizeMatch = size < 1000;
@@ -298,6 +311,7 @@ const FeedDisplay: React.FC = () => {
           break;
         default:
           sizeMatch = true;
+      }
       }
     }
 
@@ -777,23 +791,18 @@ const FeedDisplay: React.FC = () => {
           <Popover
             open={open}
             onClose={handleClosePopover}
-            anchorOrigin={{
-              vertical: "center",
-              horizontal: "center",
-            }}
-            transformOrigin={{
-              vertical: "center",
-              horizontal: "center",
-            }}
+            anchorReference="none"
             PaperProps={{
               sx: {
-                width: { xs: "95vw", sm: 800 },
-                maxWidth: 900,
-                maxHeight: "90vh",
-                position: "fixed",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
+                width: '100vw',
+                height: '100vh',
+                maxWidth: '100vw',
+                maxHeight: '100vh',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                transform: 'none',
+                borderRadius: 0,
                 m: 0,
                 display: 'flex',
                 flexDirection: 'column',
