@@ -32,6 +32,12 @@ export interface PostResponse {
     username: string;
     email: string;
     avatarUrl?: string;
+    licenseNumber?: string;
+    company?: string;
+    phone?: string;
+    bio?: string;
+    specialties?: string[];
+    isRealtor?: boolean;
   };
   imageUrl?: string;
   propertyDetails?: PropertyDetails;
@@ -47,6 +53,8 @@ export interface Post {
   content: string;
   userName: string;
   userEmail?: string;
+  userAvatarUrl?: string; // Add user avatar URL
+  userId?: string; // Add userId for profile navigation
   createdAt: string;
   imageUrl?: string;
   propertyDetails?: PropertyDetails;

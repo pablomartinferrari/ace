@@ -8,13 +8,33 @@ interface User {
   avatarUrl?: string;
   createdAt: string;
   updatedAt: string;
+  // Realtor-specific fields
+  licenseNumber?: string;
+  company?: string;
+  phone?: string;
+  bio?: string;
+  specialties?: string[];
+  isRealtor?: boolean;
+}
+
+interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+  avatar?: File;
+  licenseNumber?: string;
+  company?: string;
+  phone?: string;
+  bio?: string;
+  specialties?: string[];
+  isRealtor?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
 }
 
@@ -36,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    const apiUrl = import.meta.env.PROD ? '/api/auth/login' : 'http://localhost:3001/api/auth/login';
+    const apiUrl = import.meta.env.PROD ? '/api/auth/login' : 'http://localhost:3000/api/auth/login';
     const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,12 +73,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/');
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    const apiUrl = import.meta.env.PROD ? '/api/auth/register' : 'http://localhost:3001/api/auth/register';
+  const register = async (userData: RegisterData) => {
+    const apiUrl = import.meta.env.PROD ? '/api/auth/register' : 'http://localhost:3000/api/auth/register';
+
+    // Convert avatar to base64 if present
+    let avatarBase64 = null;
+    if (userData.avatar) {
+      avatarBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(userData.avatar!);
+      });
+    }
+
+    const requestBody: any = {
+      username: userData.username,
+      email: userData.email,
+      password: userData.password,
+      avatar: avatarBase64,
+    };
+
+    // Add realtor fields if provided
+    if (userData.licenseNumber) requestBody.licenseNumber = userData.licenseNumber;
+    if (userData.company) requestBody.company = userData.company;
+    if (userData.phone) requestBody.phone = userData.phone;
+    if (userData.bio) requestBody.bio = userData.bio;
+    if (userData.specialties) requestBody.specialties = userData.specialties;
+    if (userData.isRealtor !== undefined) requestBody.isRealtor = userData.isRealtor;
+
     const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: name, email, password }),
+      body: JSON.stringify(requestBody),
     });
     const data = await res.json();
     if (!res.ok || data.error) {

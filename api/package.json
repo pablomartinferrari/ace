@@ -21,6 +21,10 @@
     "mongoose": "^7.6.0"
   },
   "devDependencies": {
-    "@vercel/node": "^5.3.23"
+    "@types/bcryptjs": "^3.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@vercel/node": "^5.3.23",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

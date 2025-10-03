@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -53,6 +54,7 @@ const FeedDisplay: React.FC = () => {
 
   const { user } = useAuth();
   const { isDark } = useTheme();
+  const navigate = useNavigate();
 
   // Smart search normalization function
   const normalizeSearchTerm = (term: string): string => {
@@ -516,12 +518,20 @@ const FeedDisplay: React.FC = () => {
                         gap: 1,
                         mb: 1,
                       }}>
-                        <Avatar sx={{
-                          bgcolor: "rgba(255,255,255,0.2)",
-                          width: 32,
-                          height: 32
-                        }}>
-                          <PersonIcon sx={{ fontSize: 16 }} />
+                        <Avatar 
+                          src={post.userAvatarUrl}
+                          sx={{
+                            bgcolor: "rgba(255,255,255,0.2)",
+                            width: 32,
+                            height: 32,
+                            cursor: post.userId ? 'pointer' : 'default',
+                            '&:hover': post.userId ? {
+                              bgcolor: "rgba(255,255,255,0.3)",
+                            } : {}
+                          }}
+                          onClick={() => post.userId && navigate(`/profile/${post.userId}`)}
+                        >
+                          {!post.userAvatarUrl && <PersonIcon sx={{ fontSize: 16 }} />}
                         </Avatar>
                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                           {post.userEmail ? (
@@ -780,20 +790,21 @@ const FeedDisplay: React.FC = () => {
                 width: { xs: "95vw", sm: 800 },
                 maxWidth: 900,
                 maxHeight: "90vh",
-                overflowY: "auto",
                 position: "fixed",
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
                 m: 0,
+                display: 'flex',
+                flexDirection: 'column',
               },
             }}
             BackdropProps={{
               sx: { backgroundColor: 'rgba(0, 0, 0, 0.5)' }
             }}
           >
-            <Paper sx={{ p: 2, position: 'relative' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Paper sx={{ p: 2, position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexShrink: 0 }}>
                 <Typography variant="h6">
                   Create Property Deal
                 </Typography>
@@ -805,15 +816,17 @@ const FeedDisplay: React.FC = () => {
                   <CloseIcon />
                 </IconButton>
               </Box>
-              <Divider sx={{ mb: 2 }} />
-              {submitError && <Alert severity="error">{submitError}</Alert>}
-              <CreatePostForm
-                onSubmit={handleSubmit}
-                onCancel={handleClosePopover}
-                submitting={submitting}
-                submitError={submitError}
-                disabled={submitting}
-              />
+              <Divider sx={{ mb: 2, flexShrink: 0 }} />
+              <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                {submitError && <Alert severity="error" sx={{ mb: 2 }}>{submitError}</Alert>}
+                <CreatePostForm
+                  onSubmit={handleSubmit}
+                  onCancel={handleClosePopover}
+                  submitting={submitting}
+                  submitError={submitError}
+                  disabled={submitting}
+                />
+              </Box>
             </Paper>
           </Popover>
         </>

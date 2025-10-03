@@ -144,151 +144,153 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <Stack spacing={1.5}>
-        <TextField
-          fullWidth
-          multiline
-          rows={2}
-          label="What's on your mind?"
-          placeholder="Describe what you need or what you have to offer..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          variant="outlined"
-          required
-          disabled={disabled}
-        />
-
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <FormControl sx={{ flex: 1 }} disabled={disabled}>
-            <InputLabel>Post Type</InputLabel>
-            <Select
-              value={type}
-              label="Post Type"
-              onChange={handleTypeChange}
-            >
-              <MenuItem value="NEED">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <NeedIcon color="error" />
-                  NEED
-                </Box>
-              </MenuItem>
-              <MenuItem value="HAVE">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HaveIcon color="success" />
-                  HAVE
-                </Box>
-              </MenuItem>
-            </Select>
-          </FormControl>
-
+    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
+        <Stack spacing={1.5}>
           <TextField
-            sx={{ flex: 2 }}
-            label="Tags (Optional)"
-            placeholder="Add tags separated by commas"
-            value={currentTag}
-            onChange={(e) => setCurrentTag(e.target.value)}
-            onKeyDown={handleTagKeyDown}
+            fullWidth
+            multiline
+            rows={2}
+            label="What's on your mind?"
+            placeholder="Describe what you need or what you have to offer..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
             variant="outlined"
+            required
             disabled={disabled}
-            helperText={`${tags.length}/10 tags`}
           />
-        </Box>
 
-        {tags.length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {tags.map((tag, index) => (
-              <Chip
-                key={index}
-                label={tag}
-                onDelete={() => removeTag(index)}
-                size="small"
-                color="primary"
-                variant="outlined"
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <FormControl sx={{ flex: 1 }} disabled={disabled}>
+              <InputLabel>Post Type</InputLabel>
+              <Select
+                value={type}
+                label="Post Type"
+                onChange={handleTypeChange}
+              >
+                <MenuItem value="NEED">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <NeedIcon color="error" />
+                    NEED
+                  </Box>
+                </MenuItem>
+                <MenuItem value="HAVE">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <HaveIcon color="success" />
+                    HAVE
+                  </Box>
+                </MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              sx={{ flex: 2 }}
+              label="Tags (Optional)"
+              placeholder="Add tags separated by commas"
+              value={currentTag}
+              onChange={(e) => setCurrentTag(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              variant="outlined"
+              disabled={disabled}
+              helperText={`${tags.length}/10 tags`}
+            />
+          </Box>
+
+          {tags.length > 0 && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {tags.map((tag, index) => (
+                <Chip
+                  key={index}
+                  label={tag}
+                  onDelete={() => removeTag(index)}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  disabled={disabled}
+                />
+              ))}
+            </Box>
+          )}
+
+          <PropertyDetailsForm
+            propertyType={propertyType}
+            industry={industry}
+            city={city}
+            state={state}
+            address={address}
+            size={size}
+            sizeUnit={sizeUnit}
+            price={price}
+            onPropertyTypeChange={setPropertyType}
+            onIndustryChange={setIndustry}
+            onCityChange={setCity}
+            onStateChange={setState}
+            onAddressChange={setAddress}
+            onSizeChange={setSize}
+            onSizeUnitChange={setSizeUnit}
+            onPriceChange={setPrice}
+            disabled={disabled}
+          />
+
+          {type === 'HAVE' && (
+            <Box>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="image-upload"
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setImage(file);
+                }}
                 disabled={disabled}
               />
-            ))}
-          </Box>
-        )}
-
-        <PropertyDetailsForm
-          propertyType={propertyType}
-          industry={industry}
-          city={city}
-          state={state}
-          address={address}
-          size={size}
-          sizeUnit={sizeUnit}
-          price={price}
-          onPropertyTypeChange={setPropertyType}
-          onIndustryChange={setIndustry}
-          onCityChange={setCity}
-          onStateChange={setState}
-          onAddressChange={setAddress}
-          onSizeChange={setSize}
-          onSizeUnitChange={setSizeUnit}
-          onPriceChange={setPrice}
-          disabled={disabled}
-        />
-
-        {type === 'HAVE' && (
-          <Box>
-            <input
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="image-upload"
-              type="file"
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
-                setImage(file);
-              }}
-              disabled={disabled}
-            />
-            <label htmlFor="image-upload">
-              <Button
-                variant="outlined"
-                component="span"
-                startIcon={<PhotoIcon />}
-                sx={{ width: '100%' }}
-                disabled={disabled}
-              >
-                {image ? `Selected: ${image.name}` : 'Add Image (Optional)'}
-              </Button>
-            </label>
-            {image && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                File size: {(image.size / 1024 / 1024).toFixed(2)} MB
-              </Typography>
-            )}
-          </Box>
-        )}
-
-        {submitError && (
-          <Alert severity="error">
-            {submitError}
-          </Alert>
-        )}
-
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          {onCancel && (
-            <Button
-              onClick={onCancel}
-              variant="outlined"
-              disabled={submitting || disabled}
-            >
-              Cancel
-            </Button>
+              <label htmlFor="image-upload">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<PhotoIcon />}
+                  sx={{ width: '100%' }}
+                  disabled={disabled}
+                >
+                  {image ? `Selected: ${image.name}` : 'Add Image (Optional)'}
+                </Button>
+              </label>
+              {image && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  File size: {(image.size / 1024 / 1024).toFixed(2)} MB
+                </Typography>
+              )}
+            </Box>
           )}
+
+          {submitError && (
+            <Alert severity="error">
+              {submitError}
+            </Alert>
+          )}
+        </Stack>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2, borderTop: 1, borderColor: 'divider', mt: 2, flexShrink: 0 }}>
+        {onCancel && (
           <Button
-            type="submit"
-            variant="contained"
-            startIcon={submitting ? <CircularProgress size={20} /> : <AddIcon />}
+            onClick={onCancel}
+            variant="outlined"
             disabled={submitting || disabled}
           >
-            {submitting ? 'Posting...' : 'Post'}
+            Cancel
           </Button>
-        </Box>
-      </Stack>
+        )}
+        <Button
+          type="submit"
+          variant="contained"
+          startIcon={submitting ? <CircularProgress size={20} /> : <AddIcon />}
+          disabled={submitting || disabled}
+        >
+          {submitting ? 'Posting...' : 'Post'}
+        </Button>
+      </Box>
     </Box>
   );
 };

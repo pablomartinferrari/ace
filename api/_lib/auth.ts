@@ -8,9 +8,13 @@ export function signToken(user: IUser) {
   return jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function verifyToken(token: string) {
+export function verifyToken(token: string): { id: string; email: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET);
+    if (typeof payload === 'string' || !payload.id || !payload.email) {
+      return null;
+    }
+    return { id: payload.id, email: payload.email };
   } catch {
     return null;
   }

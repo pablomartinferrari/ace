@@ -9,6 +9,7 @@ import { AppThemeProvider, useTheme } from './contexts/ThemeContext';
 
 import './App.css';
 import FeedDisplay from './components/FeedDisplay';
+import ProfilePage from './components/ProfilePage';
 
 // Theme wrapper component that uses the theme context
 const ThemedApp: React.FC = () => {
@@ -20,6 +21,11 @@ const ThemedApp: React.FC = () => {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<AuthPage />} />
+            <Route path="/profile/:userId" element={
+              <PrivateRoute>
+                <ProfilePage />
+              </PrivateRoute>
+            } />
             <Route path="/*" element={
               <PrivateRoute>
                 <FeedDisplay  />
