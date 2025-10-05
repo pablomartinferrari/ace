@@ -1,5 +1,6 @@
-import { createTheme, type Theme } from '@mui/material/styles';
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createTheme } from '@mui/material/styles';
+import { useState, useEffect, type ReactNode } from 'react';
+import { ThemeContext, type ThemeContextType } from './ThemeContextBase';
 
 const sharedTypography = {
   fontFamily: '"Roboto", "Helvetica Neue", "Arial", sans-serif',
@@ -69,7 +70,7 @@ const sharedTypography = {
 };
 
 // Light theme configuration
-export const lightTheme = createTheme({
+const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -131,7 +132,7 @@ export const lightTheme = createTheme({
 });
 
 // Dark theme configuration
-export const darkTheme = createTheme({
+const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -191,25 +192,6 @@ export const darkTheme = createTheme({
     },
   },
 });
-
-// Theme context type
-interface ThemeContextType {
-  theme: Theme;
-  isDark: boolean;
-  toggleTheme: () => void;
-}
-
-// Create theme context
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-// Custom hook to use theme
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
 
 // Theme provider component
 interface ThemeProviderProps {

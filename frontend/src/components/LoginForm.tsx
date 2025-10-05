@@ -20,7 +20,7 @@ import {
   Link
 } from '@mui/material';
 import { Login as LoginIcon } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 
 interface LoginFormProps {
   onSuccess?: () => void;

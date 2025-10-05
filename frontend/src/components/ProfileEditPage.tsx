@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Container,
   Paper,
@@ -10,10 +10,12 @@ import {
   CircularProgress,
   FormControlLabel,
   Switch,
+  Avatar,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavigationBar from './NavigationBar';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
+import { PhotoCamera } from '@mui/icons-material';
 
 interface ProfileResponse {
   id: string;
@@ -64,6 +66,10 @@ const ProfileEditPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [avatarFileData, setAvatarFileData] = useState<string | null>(null);
+  const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isOwnProfile = useMemo(() => {
     return user && userId ? user.id === userId : false;
@@ -109,10 +115,14 @@ const ProfileEditPage: React.FC = () => {
           specialties: data.specialties?.join(', ') ?? '',
           isRealtor: Boolean(data.isRealtor),
         });
+        const avatar = data.avatarUrl ?? '';
+        setAvatarPreview(avatar);
+        setOriginalAvatarUrl(avatar);
+        setAvatarFileData(null);
         setError(null);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error fetching profile';
-        setError(message);
+  const message = err instanceof Error ? err.message : 'Unknown error fetching profile';
+  setError(message);
       } finally {
         setLoading(false);
       }
@@ -136,6 +146,57 @@ const ProfileEditPage: React.FC = () => {
     }));
   };
 
+  const handleAvatarButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setAvatarFileData(result);
+      setAvatarPreview(result);
+      setFormState((prev) => ({
+        ...prev,
+        avatarUrl: '',
+      }));
+    };
+    reader.onerror = () => {
+      setError('Unable to load selected image. Please try a different file.');
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  };
+
+  const handleAvatarRemove = () => {
+    setAvatarFileData(null);
+    setAvatarPreview('');
+    setFormState((prev) => ({
+      ...prev,
+      avatarUrl: '',
+    }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarRevert = () => {
+    setAvatarFileData(null);
+    setAvatarPreview(originalAvatarUrl);
+    setFormState((prev) => ({
+      ...prev,
+      avatarUrl: originalAvatarUrl,
+    }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!userId) return;
@@ -147,13 +208,28 @@ const ProfileEditPage: React.FC = () => {
     const payload: Record<string, unknown> = {
       username: formState.username.trim(),
       email: formState.email.trim(),
-      avatarUrl: formState.avatarUrl.trim(),
-      licenseNumber: formState.licenseNumber.trim(),
-      company: formState.company.trim(),
-      phone: formState.phone.trim(),
-      bio: formState.bio.trim(),
       isRealtor: formState.isRealtor,
     };
+
+    const trimmedLicense = formState.licenseNumber.trim();
+    if (trimmedLicense) {
+      payload.licenseNumber = trimmedLicense;
+    }
+
+    const trimmedCompany = formState.company.trim();
+    if (trimmedCompany) {
+      payload.company = trimmedCompany;
+    }
+
+    const trimmedPhone = formState.phone.trim();
+    if (trimmedPhone) {
+      payload.phone = trimmedPhone;
+    }
+
+    const trimmedBio = formState.bio.trim();
+    if (trimmedBio) {
+      payload.bio = trimmedBio;
+    }
 
     const specialtiesArray = formState.specialties
       .split(',')
@@ -162,13 +238,16 @@ const ProfileEditPage: React.FC = () => {
 
     payload.specialties = specialtiesArray;
 
-    // Remove empty strings to avoid overwriting with blanks unintentionally
-    Object.keys(payload).forEach((key) => {
-      const value = payload[key];
-      if (typeof value === 'string' && value.length === 0) {
-        delete payload[key];
+    if (avatarFileData) {
+      payload.avatar = avatarFileData;
+    } else {
+      const trimmedAvatarUrl = formState.avatarUrl.trim();
+      if (trimmedAvatarUrl) {
+        payload.avatarUrl = trimmedAvatarUrl;
+      } else if (originalAvatarUrl) {
+        payload.avatarUrl = '';
       }
-    });
+    }
 
     try {
       const apiUrl = import.meta.env.PROD ? `/api/users/${userId}` : `http://localhost:3000/api/users/${userId}`;
@@ -199,6 +278,21 @@ const ProfileEditPage: React.FC = () => {
 
       const updatedProfile: ProfileResponse = await response.json();
       updateUser(updatedProfile);
+      setFormState({
+        username: updatedProfile.username ?? '',
+        email: updatedProfile.email ?? '',
+        avatarUrl: updatedProfile.avatarUrl ?? '',
+        licenseNumber: updatedProfile.licenseNumber ?? '',
+        company: updatedProfile.company ?? '',
+        phone: updatedProfile.phone ?? '',
+        bio: updatedProfile.bio ?? '',
+        specialties: updatedProfile.specialties?.join(', ') ?? '',
+        isRealtor: Boolean(updatedProfile.isRealtor),
+      });
+      const updatedAvatar = updatedProfile.avatarUrl ?? '';
+      setAvatarPreview(updatedAvatar);
+      setOriginalAvatarUrl(updatedAvatar);
+      setAvatarFileData(null);
       setSuccess('Profile updated successfully!');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error updating profile';
@@ -264,6 +358,77 @@ const ProfileEditPage: React.FC = () => {
             </Alert>
           )}
 
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleAvatarFileChange}
+          />
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: 2,
+              p: 2,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+            }}
+          >
+            <Avatar
+              src={avatarPreview || undefined}
+              alt={formState.username || 'Profile avatar'}
+              sx={{ width: 96, height: 96, fontSize: 32 }}
+            >
+              {formState.username?.[0]?.toUpperCase()}
+            </Avatar>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Profile photo
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                This image appears on your profile and deal cards.
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<PhotoCamera />}
+                  onClick={handleAvatarButtonClick}
+                  disabled={saving}
+                >
+                  Change Photo
+                </Button>
+                {(avatarFileData || (originalAvatarUrl && avatarPreview && avatarPreview !== originalAvatarUrl)) && (
+                  <Button
+                    variant="text"
+                    color="secondary"
+                    onClick={handleAvatarRevert}
+                    disabled={saving}
+                  >
+                    Revert to Original
+                  </Button>
+                )}
+                {(avatarPreview || avatarFileData) && (
+                  <Button
+                    variant="text"
+                    color="error"
+                    onClick={handleAvatarRemove}
+                    disabled={saving}
+                  >
+                    Remove Photo
+                  </Button>
+                )}
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                Recommended size 200×200px (JPG, PNG, GIF).
+              </Typography>
+            </Box>
+          </Box>
+
           <Box
             sx={{
               display: 'grid',
@@ -287,15 +452,6 @@ const ProfileEditPage: React.FC = () => {
               fullWidth
               required
               sx={{ gridColumn: { xs: '1 / -1', sm: 'span 1' } }}
-            />
-
-            <TextField
-              label="Avatar URL"
-              value={formState.avatarUrl}
-              onChange={handleFieldChange('avatarUrl')}
-              fullWidth
-              helperText="Paste a link to an image to use as your avatar."
-              sx={{ gridColumn: '1 / -1' }}
             />
 
             <TextField

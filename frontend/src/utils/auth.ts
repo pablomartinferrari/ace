@@ -27,15 +27,15 @@ export const removeToken = (): void => {
 /**
  * Get the stored user data from localStorage
  */
-export const getUser = (): any | null => {
+export const getUser = <T = unknown>(): T | null => {
   const userStr = localStorage.getItem(USER_KEY);
-  return userStr ? JSON.parse(userStr) : null;
+  return userStr ? (JSON.parse(userStr) as T) : null;
 };
 
 /**
  * Store user data in localStorage
  */
-export const setUser = (user: any): void => {
+export const setUser = <T>(user: T): void => {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 };
 
@@ -59,7 +59,7 @@ export const isAuthenticated = (): boolean => {
     const currentTime = Date.now() / 1000;
 
     return payload.exp > currentTime;
-  } catch (error) {
+  } catch {
     // If token is malformed, consider user not authenticated
     return false;
   }

@@ -1,4 +1,9 @@
 import { usePostsStore, useAuthStore, useNotificationsStore } from '../stores';
+import type { Post } from '../../../shared/types';
+
+type ConnectionNotificationPayload = {
+  username: string;
+};
 
 // Custom hook that combines all stores for easy access
 export const useAppStore = () => {
@@ -48,7 +53,7 @@ export const useRealTimeUpdates = () => {
   const { triggerRefresh } = usePostsStore();
 
   // This could be called when receiving WebSocket messages
-  const handleNewPost = (postData: any) => {
+  const handleNewPost = (postData: Pick<Post, 'userName'>) => {
     addNotification({
       type: 'info',
       title: 'New Post',
@@ -57,7 +62,7 @@ export const useRealTimeUpdates = () => {
     triggerRefresh();
   };
 
-  const handleNewConnection = (userData: any) => {
+  const handleNewConnection = (userData: ConnectionNotificationPayload) => {
     addNotification({
       type: 'success',
       title: 'New Connection',

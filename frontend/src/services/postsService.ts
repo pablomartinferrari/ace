@@ -41,6 +41,15 @@ export interface PostsService {
   createPost(formData: CreatePostData, userId: string): Promise<Post>;
 }
 
+type CreatePostRequestBody = {
+  content: string;
+  type: PostType;
+  userId: string;
+  image: string | null;
+  propertyDetails?: CreatePostData['propertyDetails'];
+  tags?: string[];
+};
+
 // Mock data for development
 const mockPosts: Post[] = [
   {
@@ -226,7 +235,7 @@ class ApiPostsService implements PostsService {
       const apiUrl = this.getApiUrl();
       const token = localStorage.getItem('token');
 
-      const requestBody: any = {
+      const requestBody: CreatePostRequestBody = {
         content: formData.content,
         type: formData.type,
         userId,

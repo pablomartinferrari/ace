@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import { PersonAdd as RegisterIcon, PhotoCamera, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 
 interface RegistrationFormProps {
   onSuccess?: () => void;

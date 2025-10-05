@@ -4,7 +4,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AuthPage from './AuthPage';
 import PrivateRoute from './PrivateRoute';
 import { AuthProvider } from './contexts/AuthContext';
-import { AppThemeProvider, useTheme } from './contexts/ThemeContext';
+import { AppThemeProvider } from './contexts/ThemeContext';
+import { useTheme } from './contexts/useTheme';
 
 import './App.css';
 import FeedDisplay from './components/FeedDisplay';

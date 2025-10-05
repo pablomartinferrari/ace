@@ -26,14 +26,15 @@ import {
   Add as AddIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
-import { alpha } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { alpha, useTheme as useMuiTheme } from "@mui/material/styles";
 import type { Post, PostType } from '../../../shared/types';
 import SearchAndFilterBar from './SearchAndFilterBar';
 import CreatePostForm, { type CreatePostFormData } from './CreatePostForm';
 import ErrorDisplay from './ErrorDisplay';
 import { postsService, type CreatePostData } from '../services/postsService';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/useAuth';
+import { useTheme } from '../contexts/useTheme';
 import NavigationBar from './NavigationBar';
 
 const ACRES_TO_SQFT = 43560;
@@ -67,6 +68,8 @@ const FeedDisplay: React.FC = () => {
 
   const { user } = useAuth();
   const { isDark } = useTheme();
+  const muiTheme = useMuiTheme();
+  const isLargeScreen = useMediaQuery(muiTheme.breakpoints.up('lg'));
   const navigate = useNavigate();
 
   // Smart search normalization function
@@ -189,8 +192,9 @@ const FeedDisplay: React.FC = () => {
         setLoading(true);
         const posts = await postsService.fetchPosts();
         setPosts(posts);
-      } catch (err: any) {
-        setError(err.message || 'Error fetching posts');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Error fetching posts';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -205,8 +209,9 @@ const FeedDisplay: React.FC = () => {
       setError(null);
       const posts = await postsService.fetchPosts();
       setPosts(posts);
-    } catch (err: any) {
-      setError(err.message || 'Error fetching posts');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error fetching posts';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -775,15 +780,25 @@ const FeedDisplay: React.FC = () => {
           <Fab
             color="primary"
             onClick={handleOpenPopover}
+            aria-label="Create property deal"
+            variant={isLargeScreen ? 'extended' : 'circular'}
             sx={{
               position: "fixed",
               bottom: 24,
               right: 24,
               zIndex: 1000,
+              ...(isLargeScreen && { gap: 1.5, px: 3 }),
             }}
             size="medium"
           >
-            <AddIcon />
+            {isLargeScreen ? (
+              <>
+                <AddIcon sx={{ mr: 1 }} />
+                Create Deal
+              </>
+            ) : (
+              <AddIcon />
+            )}
           </Fab>
 
           {/* Create Post Popover */}
