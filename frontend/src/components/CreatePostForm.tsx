@@ -146,12 +146,12 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
-        <Stack spacing={1.5}>
+  <Stack spacing={1.5} sx={{ pt: 1 }}>
           <TextField
             fullWidth
             multiline
             rows={2}
-            label="What's on your mind?"
+            label="Description"
             placeholder="Describe what you need or what you have to offer..."
             value={content}
             onChange={(e) => setContent(e.target.value)}

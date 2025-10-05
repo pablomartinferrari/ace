@@ -520,6 +520,14 @@ const ProfileEditPage: React.FC = () => {
             </Button>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
+                variant="outlined"
+                color="inherit"
+                onClick={() => navigate('/')}
+                disabled={saving}
+              >
+                Home
+              </Button>
+              <Button
                 variant="text"
                 color="secondary"
                 onClick={() => navigate(`/profile/${userId}`)}

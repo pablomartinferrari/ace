@@ -115,7 +115,7 @@ const NavigationBar: React.FC = () => {
             ACE DEALS
           </Typography>
           <Typography variant="subtitle2" color="text.secondary">
-            Real Estate Network
+            Be the ACE of Deals
           </Typography>
         </Box>
 
