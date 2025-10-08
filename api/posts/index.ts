@@ -36,9 +36,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!user) return res.status(401).json({ error: 'User not found' });
 
       // Validation
-      const { type, content, image, propertyDetails, tags } = req.body;
+      const { type, status, content, image, propertyDetails, tags } = req.body;
       if (!type || !content) return res.status(400).json({ error: 'Missing required fields' });
       if (!['NEED', 'HAVE'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
+      
+      // Validate status if provided
+      if (status) {
+        const allowedStatuses = type === 'HAVE' 
+          ? ['active', 'pending', 'sold', 'leased', 'withdrawn']
+          : ['active', 'paused', 'closed'];
+        
+        if (!allowedStatuses.includes(status)) {
+          return res.status(400).json({ error: 'Invalid status for this post type' });
+        }
+      }
 
       // Validate propertyDetails if provided
       if (propertyDetails) {
@@ -87,6 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const post = new Post({
         type,
+        status: status || 'active',
         content,
         userId: user._id,
         imageUrl,
@@ -97,6 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await post.populate('userId', 'username email avatarUrl');
       return res.status(201).json(post);
     }
+    
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     logError(error);

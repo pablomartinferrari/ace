@@ -3,6 +3,8 @@
 
 export type PostType = 'NEED' | 'HAVE';
 
+export type PostStatus = 'active' | 'pending' | 'sold' | 'leased' | 'withdrawn' | 'paused' | 'closed';
+
 export type PropertyType = 'Office' | 'Retail' | 'Industrial' | 'Land' | 'Multifamily';
 
 export type IndustryType = 'Healthcare' | 'Logistics' | 'Food & Beverage' | 'Technology' | 'Manufacturing' | 'Hospitality' | 'Financial Services' | 'Education' | 'Other';
@@ -26,6 +28,7 @@ export interface PropertyDetails {
 export interface PostResponse {
   _id: string;
   type: PostType;
+  status: PostStatus;
   content: string;
   userId: {
     _id: string;
@@ -50,6 +53,7 @@ export interface PostResponse {
 export interface Post {
   id: string;
   type: PostType;
+  status: PostStatus;
   content: string;
   userName: string;
   userEmail?: string;

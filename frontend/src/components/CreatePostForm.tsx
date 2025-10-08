@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Typography,
   Alert,
   Box,
   Stack,
@@ -9,12 +8,16 @@ import {
   CircularProgress,
   Chip,
   type SelectChangeEvent,
+  Paper,
+  Typography,
+  IconButton,
 } from '@mui/material';
 import {
   ShoppingCart as NeedIcon,
   CheckCircle as HaveIcon,
   Add as AddIcon,
-  PhotoCamera as PhotoIcon,
+  CloudUpload as UploadIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import {
   FormControl,
@@ -23,7 +26,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import PropertyDetailsForm from './PropertyDetailsForm';
-import type { PostType, PropertyType, IndustryType } from '../../../shared/types';
+import type { PostType, PostStatus, PropertyType, IndustryType } from '../../../shared/types';
 
 interface CreatePostFormProps {
   onSubmit: (formData: CreatePostFormData) => Promise<void>;
@@ -36,6 +39,8 @@ interface CreatePostFormProps {
 export interface CreatePostFormData {
   content: string;
   type: PostType;
+  status: PostStatus;
+  image?: File;
   propertyDetails?: {
     propertyType?: PropertyType;
     industry?: IndustryType[];
@@ -49,7 +54,6 @@ export interface CreatePostFormData {
     price?: number;
   };
   tags?: string[];
-  image?: File;
 }
 
 const CreatePostForm: React.FC<CreatePostFormProps> = ({
@@ -62,7 +66,9 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   // Form state
   const [content, setContent] = useState<string>("");
   const [type, setType] = useState<PostType>("NEED");
-  const [image, setImage] = useState<File | null>(null);
+  const [status, setStatus] = useState<PostStatus>("active");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Property details state
   const [propertyType, setPropertyType] = useState<PropertyType | "">("");
@@ -101,7 +107,8 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
     const formData: CreatePostFormData = {
       content: content.trim(),
       type,
-      image: image || undefined,
+      status,
+      image: (type === 'HAVE' && selectedImage) ? selectedImage : undefined,
       propertyDetails,
       tags: tags.length > 0 ? tags : undefined,
     };
@@ -111,7 +118,9 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
     // Clear form on success
     setContent("");
     setType("NEED");
-    setImage(null);
+    setStatus("active");
+    setSelectedImage(null);
+    setImagePreview(null);
     setPropertyType("");
     setIndustry([]);
     setCity("");
@@ -128,6 +137,19 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
     setType(event.target.value as PostType);
   };
 
+  const handleStatusChange = (event: SelectChangeEvent) => {
+    setStatus(event.target.value as PostStatus);
+  };
+
+  // Get status options based on post type
+  const getStatusOptions = (postType: PostType): PostStatus[] => {
+    if (postType === 'HAVE') {
+      return ['active', 'pending', 'sold', 'leased', 'withdrawn'];
+    } else {
+      return ['active', 'paused', 'closed'];
+    }
+  };
+
   const handleTagKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
@@ -141,6 +163,23 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
   const removeTag = (indexToRemove: number) => {
     setTags(tags.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
   return (
@@ -183,6 +222,21 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
               </Select>
             </FormControl>
 
+            <FormControl sx={{ flex: 1 }} disabled={disabled}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={status}
+                label="Status"
+                onChange={handleStatusChange}
+              >
+                {getStatusOptions(type).map((statusOption) => (
+                  <MenuItem key={statusOption} value={statusOption}>
+                    {statusOption.charAt(0).toUpperCase() + statusOption.slice(1)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             <TextField
               sx={{ flex: 2 }}
               label="Tags (Optional)"
@@ -212,6 +266,76 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </Box>
           )}
 
+          {type === 'HAVE' && (
+            <Box>
+              {!selectedImage ? (
+                <Paper
+                  sx={{
+                    p: 2,
+                    border: '2px dashed #ccc',
+                    textAlign: 'center',
+                    cursor: disabled ? 'default' : 'pointer',
+                    '&:hover': disabled ? {} : {
+                      borderColor: '#999',
+                      backgroundColor: 'rgba(0, 0, 0, 0.02)'
+                    }
+                  }}
+                  onClick={() => !disabled && document.getElementById('image-upload')?.click()}
+                >
+                  <UploadIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
+                  <Typography variant="body2" color="textSecondary">
+                    Click to upload an image (optional)
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    PNG, JPG up to 5MB
+                  </Typography>
+                </Paper>
+              ) : (
+                <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                  <Paper sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {imagePreview && (
+                      <Box
+                        component="img"
+                        src={imagePreview}
+                        alt="Preview"
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          objectFit: 'cover',
+                          borderRadius: 1
+                        }}
+                      />
+                    )}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" noWrap>
+                        {selectedImage.name}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {(selectedImage.size / 1024 / 1024).toFixed(2)} MB
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={removeImage}
+                      disabled={disabled}
+                      sx={{ ml: 1 }}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </Paper>
+                </Box>
+              )}
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ display: 'none' }}
+                disabled={disabled}
+              />
+            </Box>
+          )}
+
           <PropertyDetailsForm
             propertyType={propertyType}
             industry={industry}
@@ -232,37 +356,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
             disabled={disabled}
           />
 
-          {type === 'HAVE' && (
-            <Box>
-              <input
-                accept="image/*"
-                style={{ display: 'none' }}
-                id="image-upload"
-                type="file"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setImage(file);
-                }}
-                disabled={disabled}
-              />
-              <label htmlFor="image-upload">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<PhotoIcon />}
-                  sx={{ width: '100%' }}
-                  disabled={disabled}
-                >
-                  {image ? `Selected: ${image.name}` : 'Add Image (Optional)'}
-                </Button>
-              </label>
-              {image && (
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  File size: {(image.size / 1024 / 1024).toFixed(2)} MB
-                </Typography>
-              )}
-            </Box>
-          )}
+
 
           {submitError && (
             <Alert severity="error">

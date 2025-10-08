@@ -32,6 +32,7 @@ import type { Post, PostType } from '../../../shared/types';
 import SearchAndFilterBar from './SearchAndFilterBar';
 import CreatePostForm, { type CreatePostFormData } from './CreatePostForm';
 import ErrorDisplay from './ErrorDisplay';
+import PostDetailModal from './PostDetailModal';
 import { postsService, type CreatePostData } from '../services/postsService';
 import { useAuth } from '../contexts/useAuth';
 import { useTheme } from '../contexts/useTheme';
@@ -65,6 +66,10 @@ const FeedDisplay: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  
+  // Local state for post detail modal
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const { user } = useAuth();
   const { isDark } = useTheme();
@@ -232,6 +237,7 @@ const FeedDisplay: React.FC = () => {
       const createData: CreatePostData = {
         content: formData.content,
         type: formData.type,
+        status: formData.status,
         image: formData.image,
         propertyDetails: formData.propertyDetails,
         tags: formData.tags,
@@ -258,6 +264,28 @@ const FeedDisplay: React.FC = () => {
     setSubmitError("");
   };
   const open = Boolean(anchorEl);
+  
+  // Modal handlers
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
+    setDetailModalOpen(true);
+  };
+  
+  const handleCloseDetailModal = () => {
+    setDetailModalOpen(false);
+    setSelectedPost(null);
+  };
+  
+  const handlePostUpdated = (updatedPost: Post) => {
+    setPosts(prev => prev.map(post => 
+      post.id === updatedPost.id ? updatedPost : post
+    ));
+    // Also update the selected post if it's the one being viewed in the modal
+    setSelectedPost(prev => 
+      prev && prev.id === updatedPost.id ? updatedPost : prev
+    );
+  };
+  
   // derive filtered posts from local state
   const filteredPosts = posts.filter((post) => {
     const typeMatch =
@@ -484,49 +512,68 @@ const FeedDisplay: React.FC = () => {
               >
                 {filteredPosts.length > 0 ? (
                   filteredPosts.map((post) => (
-                    <Card key={post.id} elevation={2} sx={{ borderRadius: 3, position: 'relative', overflow: 'hidden', maxHeight: 300, display: 'flex', flexDirection: 'column' }}>
-                  {/* Top 70% - Image with Overlay */}
-                  <Box sx={{ position: 'relative', height: '70%', flexShrink: 0 }}>
-                    {post.imageUrl ? (
-                      <CardMedia
-                        component="img"
-                        image={post.imageUrl}
-                        alt="Post image"
-                        sx={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <CardMedia
-                        component="img"
-                        image="/no-image.png"
-                        alt="No image available"
-                        sx={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          opacity: 0.7,
-                        }}
-                      />
-                    )}
-
-                    {/* Overlay Content on Image */}
-                    <Box
-                      sx={(theme) => ({
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: `linear-gradient(to bottom, ${alpha(theme.palette.common.black, 0.1)} 0%, ${alpha(theme.palette.common.black, 0.72)} 100%)`,
-                        color: theme.palette.common.white,
-                        p: 2,
-                        display: 'flex',
+                    <Card 
+                      key={post.id} 
+                      elevation={2} 
+                      onClick={() => handlePostClick(post)}
+                      sx={{ 
+                        borderRadius: 3, 
+                        position: 'relative', 
+                        overflow: 'hidden', 
+                        maxHeight: 300, 
+                        display: 'flex', 
                         flexDirection: 'column',
-                      })}
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s, elevation 0.2s',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          elevation: 4,
+                        }
+                      }}
                     >
+                  {/* Conditional Image Section - Only for HAVE posts */}
+                  {post.type === 'HAVE' && (
+                    <Box sx={{ position: 'relative', height: '70%', flexShrink: 0 }}>
+                      {post.imageUrl ? (
+                        <CardMedia
+                          component="img"
+                          image={post.imageUrl}
+                          alt="Post image"
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <CardMedia
+                          component="img"
+                          image="/no-image.png"
+                          alt="No image available"
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            opacity: 0.7,
+                          }}
+                        />
+                      )}
+
+                      {/* Overlay Content on Image */}
+                      <Box
+                        sx={(theme) => ({
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: `linear-gradient(to bottom, ${alpha(theme.palette.common.black, 0.1)} 0%, ${alpha(theme.palette.common.black, 0.72)} 100%)`,
+                          color: theme.palette.common.white,
+                          p: 2,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        })}
+                      >
                       {/* Top Section - Profile Info and Deal Type */}
                       <Box sx={{
                         display: "flex",
@@ -574,17 +621,31 @@ const FeedDisplay: React.FC = () => {
                             </Typography>
                           )}
                         </Box>
-                        <Chip
-                          icon={getTypeIcon(post.type)}
-                          label={post.type}
-                          color={getTypeColor(post.type)}
-                          size="small"
-                          sx={{
-                            fontSize: '0.7rem',
-                            height: 24,
-                            '& .MuiChip-label': { px: 1 }
-                          }}
-                        />
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Chip
+                            icon={getTypeIcon(post.type)}
+                            label={post.type}
+                            color={getTypeColor(post.type)}
+                            size="small"
+                            sx={{
+                              fontSize: '0.7rem',
+                              height: 24,
+                              '& .MuiChip-label': { px: 1 }
+                            }}
+                          />
+                          <Chip
+                            label={post.status ? post.status.charAt(0).toUpperCase() + post.status.slice(1) : 'Active'}
+                            size="small"
+                            sx={(theme) => ({
+                              fontSize: '0.7rem',
+                              height: 24,
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              color: theme.palette.text.primary,
+                              border: `1px solid rgba(255, 255, 255, 0.3)`,
+                              '& .MuiChip-label': { px: 1, fontWeight: 500 }
+                            })}
+                          />
+                        </Box>
                       </Box>
 
                       {/* Property Type, Industry, and Location - Right below profile */}
@@ -651,11 +712,132 @@ const FeedDisplay: React.FC = () => {
                           )}
                         </Box>
                       )}
+                      </Box>
                     </Box>
-                  </Box>
+                  )}
 
-                  {/* Bottom 30% - Details Section */}
-                  <CardContent sx={{ height: '30%', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {/* Header Section for NEED posts - No image, just profile info */}
+                  {post.type === 'NEED' && (
+                    <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                      <Box sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1,
+                      }}>
+                        <Avatar 
+                          src={post.userAvatarUrl}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            cursor: post.userId ? 'pointer' : 'default',
+                          }}
+                          onClick={() => post.userId && navigate(`/profile/${post.userId}`)}
+                        >
+                          {!post.userAvatarUrl && <PersonIcon sx={{ fontSize: 16 }} />}
+                        </Avatar>
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          {post.userEmail ? (
+                            <Link
+                              href={`mailto:${post.userEmail}?subject=Re: ${encodeURIComponent(post.content.substring(0, 50))}${post.content.length > 50 ? '...' : ''}`}
+                              underline="hover"
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 600,
+                              }}
+                            >
+                              {post.userName}
+                            </Link>
+                          ) : (
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 600,
+                              }}
+                            >
+                              {post.userName}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Chip
+                            icon={getTypeIcon(post.type)}
+                            label={post.type}
+                            color={getTypeColor(post.type)}
+                            size="small"
+                            sx={{
+                              fontSize: '0.7rem',
+                              height: 24,
+                              '& .MuiChip-label': { px: 1 }
+                            }}
+                          />
+                          <Chip
+                            label={post.status ? post.status.charAt(0).toUpperCase() + post.status.slice(1) : 'Active'}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              fontSize: '0.7rem',
+                              height: 24,
+                              '& .MuiChip-label': { px: 1 }
+                            }}
+                          />
+                        </Box>
+                      </Box>
+
+                      {/* Property Type, Industry, and Location for NEED posts */}
+                      {post.propertyDetails && (
+                        <Box sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 1,
+                        }}>
+                          {post.propertyDetails.propertyType && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.75rem' }}>🏢</span>}
+                              label={post.propertyDetails.propertyType}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 24,
+                              }}
+                            />
+                          )}
+                          {post.propertyDetails.industry && post.propertyDetails.industry.length > 0 && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.75rem' }}>💼</span>}
+                              label={post.propertyDetails.industry.slice(0, 2).join(', ')}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 24,
+                              }}
+                            />
+                          )}
+                          {post.propertyDetails.location && (
+                            <Chip
+                              icon={<span style={{ fontSize: '0.75rem' }}>📍</span>}
+                              label={`${post.propertyDetails.location.city}, ${post.propertyDetails.location.state}`}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 24,
+                              }}
+                            />
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Details Section - Adjusted height based on post type */}
+                  <CardContent sx={{ 
+                    height: post.type === 'HAVE' ? '30%' : 'auto', 
+                    flex: post.type === 'NEED' ? 1 : undefined,
+                    p: 2, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: 1 
+                  }}>
                     {/* Description */}
                     <Tooltip title={post.content} placement="top">
                       <Typography
@@ -852,6 +1034,14 @@ const FeedDisplay: React.FC = () => {
               </Box>
             </Paper>
           </Popover>
+          
+          {/* Post Detail Modal */}
+          <PostDetailModal
+            post={selectedPost}
+            open={detailModalOpen}
+            onClose={handleCloseDetailModal}
+            onPostUpdated={handlePostUpdated}
+          />
           </>
         )}
       </Box>

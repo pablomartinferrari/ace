@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export interface IPost extends Document {
   type: 'NEED' | 'HAVE';
+  status?: 'active' | 'pending' | 'sold' | 'leased' | 'withdrawn' | 'paused' | 'closed';
   content: string;
   userId: Types.ObjectId;
   imageUrl?: string;
@@ -24,6 +25,7 @@ export interface IPost extends Document {
 
 const PostSchema: Schema<IPost> = new Schema({
   type: { type: String, enum: ['NEED', 'HAVE'], required: true },
+  status: { type: String, enum: ['active', 'pending', 'sold', 'leased', 'withdrawn', 'paused', 'closed'], default: 'active' },
   content: { type: String, required: true },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   imageUrl: { type: String },

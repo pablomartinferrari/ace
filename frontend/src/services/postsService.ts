@@ -1,9 +1,11 @@
 import { getAuthHeader } from '../utils/auth';
-import type { Post, PostType, PropertyType, IndustryType, PropertyDetails } from '../../../shared/types';
+import type { Post, PostType, PostStatus, PropertyType, IndustryType, PropertyDetails } from '../../../shared/types';
 
 export interface CreatePostData {
   content: string;
   type: PostType;
+  status: PostStatus;
+  image?: File;
   propertyDetails?: {
     propertyType?: PropertyType;
     industry?: IndustryType[];
@@ -17,12 +19,12 @@ export interface CreatePostData {
     price?: number;
   };
   tags?: string[];
-  image?: File;
 }
 
 export interface ApiPostResponse {
   _id: string;
   type: PostType;
+  status: PostStatus;
   content: string;
   userId: {
     _id: string;
@@ -36,16 +38,23 @@ export interface ApiPostResponse {
   tags?: string[];
 }
 
+export interface UpdatePostData {
+  status?: PostStatus;
+  price?: number;
+  tags?: string[];
+}
+
 export interface PostsService {
   fetchPosts(): Promise<Post[]>;
   createPost(formData: CreatePostData, userId: string): Promise<Post>;
+  updatePost(postId: string, updateData: UpdatePostData): Promise<Post>;
 }
 
 type CreatePostRequestBody = {
   content: string;
   type: PostType;
+  status: PostStatus;
   userId: string;
-  image: string | null;
   propertyDetails?: CreatePostData['propertyDetails'];
   tags?: string[];
 };
@@ -55,6 +64,7 @@ const mockPosts: Post[] = [
   {
     id: '1',
     type: 'NEED',
+    status: 'active',
     content: 'Looking for a 2,000 sq ft office space in downtown area. Budget up to $5,000/month.',
     userName: 'John Smith',
     userEmail: 'john.smith@email.com',
@@ -78,6 +88,7 @@ const mockPosts: Post[] = [
   {
     id: '2',
     type: 'HAVE',
+    status: 'active',
     content: 'Available: 5,000 sq ft industrial warehouse with loading dock. Perfect for logistics company.',
     userName: 'Sarah Johnson',
     userEmail: 'sarah.johnson@email.com',
@@ -102,6 +113,7 @@ const mockPosts: Post[] = [
   {
     id: '3',
     type: 'NEED',
+    status: 'active',
     content: 'Seeking retail space for a coffee shop. Around 1,200 sq ft, high foot traffic area preferred.',
     userName: 'Mike Chen',
     userEmail: 'mike.chen@email.com',
@@ -123,6 +135,7 @@ const mockPosts: Post[] = [
   {
     id: '4',
     type: 'HAVE',
+    status: 'pending',
     content: 'Beautiful 3-acre land parcel available for development. Zoned for multifamily residential.',
     userName: 'David Wilson',
     userEmail: 'david.wilson@email.com',
@@ -147,6 +160,7 @@ const mockPosts: Post[] = [
   {
     id: '5',
     type: 'NEED',
+    status: 'paused',
     content: 'Healthcare provider looking for medical office space. Need exam rooms and waiting area.',
     userName: 'Dr. Emily Davis',
     userEmail: 'emily.davis@email.com',
@@ -177,6 +191,7 @@ class ApiPostsService implements PostsService {
     return {
       id: apiPost._id,
       type: apiPost.type,
+      status: apiPost.status || 'active',
       content: apiPost.content,
       userName: apiPost.userId?.username || 'Unknown User',
       userEmail: apiPost.userId?.email,
@@ -221,53 +236,103 @@ class ApiPostsService implements PostsService {
 
   async createPost(formData: CreatePostData, userId: string): Promise<Post> {
     try {
-      // Convert image to base64 if present
-      let imageBase64 = null;
-      if (formData.image) {
-        imageBase64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(formData.image!);
-        });
-      }
-
       const apiUrl = this.getApiUrl();
       const token = localStorage.getItem('token');
 
-      const requestBody: CreatePostRequestBody = {
-        content: formData.content,
-        type: formData.type,
-        userId,
-        image: imageBase64,
-      };
+      // Use FormData if image is provided, otherwise use JSON
+      if (formData.image && formData.type === 'HAVE') {
+        const formDataPayload = new FormData();
+        formDataPayload.append('content', formData.content);
+        formDataPayload.append('type', formData.type);
+        formDataPayload.append('status', formData.status);
+        formDataPayload.append('userId', userId);
+        formDataPayload.append('image', formData.image);
 
-      if (formData.propertyDetails) {
-        requestBody.propertyDetails = formData.propertyDetails;
-      }
+        if (formData.propertyDetails) {
+          formDataPayload.append('propertyDetails', JSON.stringify(formData.propertyDetails));
+        }
 
-      if (formData.tags) {
-        requestBody.tags = formData.tags;
+        if (formData.tags) {
+          formDataPayload.append('tags', JSON.stringify(formData.tags));
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+            // Don't set Content-Type for FormData, let browser set it with boundary
+          },
+          body: formDataPayload,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create post');
+        }
+
+        const apiPost: ApiPostResponse = await response.json();
+        return this.transformApiPost(apiPost);
+      } else {
+        // Use JSON for posts without images
+        const requestBody: CreatePostRequestBody = {
+          content: formData.content,
+          type: formData.type,
+          status: formData.status,
+          userId,
+        };
+
+        if (formData.propertyDetails) {
+          requestBody.propertyDetails = formData.propertyDetails;
+        }
+
+        if (formData.tags) {
+          requestBody.tags = formData.tags;
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create post');
+        }
+
+        const apiPost: ApiPostResponse = await response.json();
+        return this.transformApiPost(apiPost);
       }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      throw new Error('Failed to create post. Please try again.');
+    }
+  }
+
+  async updatePost(postId: string, updateData: UpdatePostData): Promise<Post> {
+    try {
+      const apiUrl = `${this.getApiUrl()}/${postId}`;
+      const token = localStorage.getItem('token');
 
       const response = await fetch(apiUrl, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : ''
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create post');
+        throw new Error('Failed to update post');
       }
 
       const apiPost: ApiPostResponse = await response.json();
       return this.transformApiPost(apiPost);
     } catch (error) {
-      console.error('Error creating post:', error);
-      throw new Error('Failed to create post. Please try again.');
+      console.error('Error updating post:', error);
+      throw new Error('Failed to update post. Please try again.');
     }
   }
 }
@@ -286,14 +351,22 @@ class MockPostsService implements PostsService {
   async createPost(formData: CreatePostData, _userId: string): Promise<Post> {
     await new Promise(resolve => setTimeout(resolve, this.delay));
 
+    // Generate a mock image URL if image was provided and it's a HAVE post
+    let imageUrl: string | undefined;
+    if (formData.image && formData.type === 'HAVE') {
+      // In real implementation, this would be uploaded to cloud storage
+      imageUrl = URL.createObjectURL(formData.image);
+    }
+
     const newPost: Post = {
       id: Date.now().toString(),
       type: formData.type,
+      status: formData.status || 'active',
       content: formData.content,
       userName: 'Mock User',
       userId: _userId, // Use the provided userId
       createdAt: new Date().toISOString(),
-      imageUrl: formData.image ? URL.createObjectURL(formData.image) : undefined,
+      imageUrl,
       propertyDetails: formData.propertyDetails as PropertyDetails,
       tags: formData.tags
     };
@@ -301,6 +374,37 @@ class MockPostsService implements PostsService {
     this.posts.unshift(newPost); // Add to beginning of array
     console.log('MockPostsService: Created new post:', newPost);
     return newPost;
+  }
+
+  async updatePost(postId: string, updateData: UpdatePostData): Promise<Post> {
+    await new Promise(resolve => setTimeout(resolve, this.delay));
+
+    const postIndex = this.posts.findIndex(post => post.id === postId);
+    if (postIndex === -1) {
+      throw new Error('Post not found');
+    }
+
+    const updatedPost: Post = {
+      ...this.posts[postIndex],
+      ...updateData
+    };
+
+    // Handle price update (nested in propertyDetails)
+    if (updateData.price !== undefined && updatedPost.propertyDetails) {
+      updatedPost.propertyDetails = {
+        ...updatedPost.propertyDetails,
+        price: updateData.price
+      };
+    }
+
+    // Handle tags update
+    if (updateData.tags !== undefined) {
+      updatedPost.tags = updateData.tags;
+    }
+
+    this.posts[postIndex] = updatedPost;
+    console.log('MockPostsService: Updated post:', updatedPost);
+    return updatedPost;
   }
 }
 
