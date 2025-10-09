@@ -42,6 +42,7 @@ export interface UpdatePostData {
   status?: PostStatus;
   price?: number;
   tags?: string[];
+  image?: File | null; // File for new image, null to remove image
 }
 
 export interface PostsService {
@@ -204,6 +205,15 @@ class ApiPostsService implements PostsService {
     };
   }
 
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  }
+
   async fetchPosts(): Promise<Post[]> {
     try {
       const apiUrl = this.getApiUrl();
@@ -315,21 +325,56 @@ class ApiPostsService implements PostsService {
       const apiUrl = `${this.getApiUrl()}/${postId}`;
       const token = localStorage.getItem('token');
 
-      const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify(updateData),
-      });
+      // Convert image to base64 if provided, then use JSON (same as POST pattern)
+      if (updateData.image !== undefined) {
+        let imageBase64: string | null = null;
+        
+        if (updateData.image) {
+          // Convert File to base64
+          imageBase64 = await this.fileToBase64(updateData.image);
+        }
+        // If updateData.image is null/empty, imageBase64 remains null for removal
 
-      if (!response.ok) {
-        throw new Error('Failed to update post');
+        const requestBody = {
+          status: updateData.status,
+          price: updateData.price,
+          tags: updateData.tags,
+          image: imageBase64
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update post');
+        }
+
+        const apiPost: ApiPostResponse = await response.json();
+        return this.transformApiPost(apiPost);
+      } else {
+        // Use JSON for updates without image changes
+        const response = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify(updateData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update post');
+        }
+
+        const apiPost: ApiPostResponse = await response.json();
+        return this.transformApiPost(apiPost);
       }
-
-      const apiPost: ApiPostResponse = await response.json();
-      return this.transformApiPost(apiPost);
     } catch (error) {
       console.error('Error updating post:', error);
       throw new Error('Failed to update post. Please try again.');
@@ -400,6 +445,17 @@ class MockPostsService implements PostsService {
     // Handle tags update
     if (updateData.tags !== undefined) {
       updatedPost.tags = updateData.tags;
+    }
+
+    // Handle image update (only for HAVE posts)
+    if (updateData.image !== undefined && updatedPost.type === 'HAVE') {
+      if (updateData.image) {
+        // Generate a mock image URL for new uploads
+        updatedPost.imageUrl = URL.createObjectURL(updateData.image);
+      } else {
+        // Remove image
+        updatedPost.imageUrl = undefined;
+      }
     }
 
     this.posts[postIndex] = updatedPost;

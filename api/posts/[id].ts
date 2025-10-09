@@ -3,8 +3,18 @@ import { connectDB } from '../_lib/db';
 import { Post } from '../_lib/models/Post';
 import { User } from '../_lib/models/User';
 import { verifyToken } from '../_lib/auth';
+import { uploadImage } from '../_lib/cloudinary';
 import { setCors } from '../_lib/cors';
 import { logRequest, logError } from '../_lib/logger';
+
+// Configure Vercel to handle body parsing
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(res);
@@ -37,8 +47,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ error: 'Not authorized to update this post' });
       }
 
-      // Validate and update allowed fields
-      const { status, price, tags } = req.body;
+      // Parse request body - same pattern as POST endpoint
+      const { status, price, tags, image } = req.body;
+      
+      // Debug logging
+      console.log('Request body keys:', Object.keys(req.body || {}));
+      console.log('Status:', status);
+      console.log('Price:', price);  
+      console.log('Tags:', tags);
+      console.log('Image provided:', !!image);
       
       if (status) {
         const allowedStatuses = post.type === 'HAVE' 
@@ -79,6 +96,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         
         post.tags = tags.map((tag: string) => tag.trim());
+      }
+
+      // Handle image updates - same pattern as POST endpoint
+      if (post.type === 'HAVE' && image !== undefined) {
+        if (image && image !== '' && image !== null) {
+          // Upload new image (image should be base64 string)
+          const result = await uploadImage(image);
+          post.imageUrl = result.secure_url;
+        } else if (image === '' || image === null) {
+          // Remove existing image
+          post.imageUrl = undefined;
+        }
       }
 
       await post.save();

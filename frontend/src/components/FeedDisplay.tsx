@@ -62,6 +62,7 @@ const FeedDisplay: React.FC = () => {
   const [filterType, setFilterType] = useState<PostType | 'ALL'>('ALL');
   const [filterPrice, setFilterPrice] = useState('ALL');
   const [filterSize, setFilterSize] = useState('ALL');
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
   // Local state for create-post popover
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -351,8 +352,14 @@ const FeedDisplay: React.FC = () => {
       }
     }
 
+    // Status filter - show only active deals if toggle is on
+    let statusMatch = true;
+    if (showActiveOnly) {
+      statusMatch = post.status === 'active' || !post.status; // treat missing status as active
+    }
+
     if (searchQuery.length < 3) {
-      return typeMatch && priceMatch && sizeMatch;
+      return typeMatch && priceMatch && sizeMatch && statusMatch;
     }
 
     // Parse smart search terms
@@ -429,7 +436,7 @@ const FeedDisplay: React.FC = () => {
                        propertyTypeMatch || industryMatch || locationMatch;
     }
 
-    return typeMatch && priceMatch && sizeMatch && smartLocationMatch && smartPropertyTypeMatch && generalTextMatch;
+    return typeMatch && priceMatch && sizeMatch && statusMatch && smartLocationMatch && smartPropertyTypeMatch && generalTextMatch;
   });
 
   if (loading) {
@@ -485,16 +492,19 @@ const FeedDisplay: React.FC = () => {
                 filterType={filterType}
                 filterPrice={filterPrice}
                 filterSize={filterSize}
+                showActiveOnly={showActiveOnly}
                 onSearchChange={setSearchQuery}
                 onFilterChange={setFilterType}
                 onPriceFilterChange={setFilterPrice}
                 onSizeFilterChange={setFilterSize}
+                onActiveFilterChange={setShowActiveOnly}
                 onClearSearch={() => setSearchQuery('')}
                 onClearAllFilters={() => {
                   setSearchQuery('');
                   setFilterType('ALL');
                   setFilterPrice('ALL');
                   setFilterSize('ALL');
+                  setShowActiveOnly(false);
                 }}
               />
 

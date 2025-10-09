@@ -10,6 +10,8 @@ import {
   Stack,
   IconButton,
   Tooltip,
+  FormControlLabel,
+  Switch,
   type SelectChangeEvent,
 } from '@mui/material';
 import {
@@ -18,6 +20,7 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
   ClearAll as ClearAllIcon,
+  Verified as ActiveIcon,
 } from '@mui/icons-material';
 import type { PostType } from '../../../shared/types';
 
@@ -26,10 +29,12 @@ interface SearchAndFilterBarProps {
   filterType: PostType | 'ALL';
   filterPrice: string;
   filterSize: string;
+  showActiveOnly: boolean;
   onSearchChange: (value: string) => void;
   onFilterChange: (value: PostType | 'ALL') => void;
   onPriceFilterChange: (value: string) => void;
   onSizeFilterChange: (value: string) => void;
+  onActiveFilterChange: (value: boolean) => void;
   onClearSearch: () => void;
   onClearAllFilters: () => void;
 }
@@ -39,10 +44,12 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   filterType,
   filterPrice,
   filterSize,
+  showActiveOnly,
   onSearchChange,
   onFilterChange,
   onPriceFilterChange,
   onSizeFilterChange,
+  onActiveFilterChange,
   onClearSearch,
   onClearAllFilters,
 }) => {
@@ -60,6 +67,10 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
 
   const handleSizeFilterChange = (event: SelectChangeEvent) => {
     onSizeFilterChange(event.target.value);
+  };
+
+  const handleActiveFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onActiveFilterChange(event.target.checked);
   };
 
   return (
@@ -144,6 +155,35 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             <MenuItem value="OVER_100000">Over 100,000 sq ft</MenuItem>
           </Select>
         </FormControl>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          minWidth: { xs: '100%', sm: 'auto' },
+          justifyContent: { xs: 'flex-start', sm: 'center' }
+        }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showActiveOnly}
+                onChange={handleActiveFilterChange}
+                size="small"
+              />
+            }
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <ActiveIcon fontSize="small" color={showActiveOnly ? "success" : "disabled"} />
+                Show active deals only
+              </Box>
+            }
+            sx={{ 
+              mr: 0,
+              '& .MuiFormControlLabel-label': { 
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap'
+              } 
+            }}
+          />
+        </Box>
         <Tooltip title="Clear all filters">
           <IconButton
             color="inherit"

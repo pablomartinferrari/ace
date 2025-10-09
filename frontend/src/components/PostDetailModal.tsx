@@ -27,6 +27,8 @@ import {
   Person as PersonIcon,
   ShoppingCart as NeedIcon,
   CheckCircle as HaveIcon,
+  CloudUpload as UploadIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import type { Post, PostStatus, PostType } from '../../../shared/types';
 import { postsService } from '../services/postsService';
@@ -56,6 +58,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
   const [editedPrice, setEditedPrice] = useState<number | ''>('');
   const [editedTags, setEditedTags] = useState<string[]>([]);
   const [tagInputValue, setTagInputValue] = useState<string>('');
+  const [editedImage, setEditedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [removeImage, setRemoveImage] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -65,6 +70,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
       setEditedPrice(post.propertyDetails?.price || '');
       setEditedTags(post.tags || []);
       setTagInputValue((post.tags || []).join(', '));
+      setEditedImage(null);
+      setImagePreview('');
+      setRemoveImage(false);
     }
   }, [post]);
 
@@ -107,6 +115,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     setEditedPrice(post.propertyDetails?.price || '');
     setEditedTags(post.tags || []);
     setTagInputValue((post.tags || []).join(', '));
+    setEditedImage(null);
+    setImagePreview('');
+    setRemoveImage(false);
     setError('');
   };
 
@@ -134,6 +145,15 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
         updateData.tags = editedTags;
       }
 
+      // Handle image updates (only for HAVE posts)
+      if (post.type === 'HAVE') {
+        if (removeImage) {
+          updateData.image = null; // Remove existing image
+        } else if (editedImage) {
+          updateData.image = editedImage; // Upload new image
+        }
+      }
+
       const updatedPost = await postsService.updatePost(post.id, updateData);
       
       // Update local state to reflect the changes immediately
@@ -141,9 +161,15 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
       setEditedPrice(updatedPost.propertyDetails?.price || '');
       setEditedTags(updatedPost.tags || []);
       setTagInputValue((updatedPost.tags || []).join(', '));
+      setEditedImage(null);
+      setImagePreview('');
+      setRemoveImage(false);
       
       setIsEditing(false);
       onPostUpdated?.(updatedPost);
+      
+      // Close the modal after successful save
+      onClose();
       
     } catch (err) {
       console.error('Error updating post:', err);
@@ -217,19 +243,103 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
           minHeight: 0
         }}>
           {/* Image Section - Only for HAVE posts */}
-          {post.type === 'HAVE' && post.imageUrl && (
+          {post.type === 'HAVE' && (
             <Box sx={{ mb: 2 }}>
-              <CardMedia
-                component="img"
-                image={post.imageUrl}
-                alt="Post image"
-                sx={{
-                  width: '100%',
-                  maxHeight: 200,
-                  objectFit: 'cover',
-                  borderRadius: 1,
-                }}
-              />
+              {isEditing && isOwner ? (
+                <Box>
+                  {/* Current or Preview Image */}
+                  {(imagePreview || (post.imageUrl && !removeImage)) && (
+                    <Box sx={{ position: 'relative', mb: 1 }}>
+                      <CardMedia
+                        component="img"
+                        image={imagePreview || post.imageUrl}
+                        alt="Post image"
+                        sx={{
+                          width: '100%',
+                          maxHeight: 200,
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                        }}
+                      />
+                      <IconButton
+                        onClick={() => {
+                          if (editedImage) {
+                            setEditedImage(null);
+                            setImagePreview('');
+                          } else {
+                            setRemoveImage(true);
+                          }
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          bgcolor: 'rgba(255, 255, 255, 0.8)',
+                          '&:hover': {
+                            bgcolor: 'rgba(255, 255, 255, 0.9)',
+                          }
+                        }}
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  )}
+
+                  {/* Upload New Image Button */}
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    startIcon={<UploadIcon />}
+                    sx={{ mb: 1 }}
+                    fullWidth
+                  >
+                    {post.imageUrl && !removeImage && !editedImage ? 'Replace Image' : 'Upload Image'}
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setEditedImage(file);
+                          setImagePreview(URL.createObjectURL(file));
+                          setRemoveImage(false);
+                        }
+                      }}
+                    />
+                  </Button>
+
+                  {/* Remove Image Option */}
+                  {post.imageUrl && !editedImage && (
+                    <Button
+                      onClick={() => setRemoveImage(!removeImage)}
+                      variant={removeImage ? "contained" : "outlined"}
+                      color={removeImage ? "error" : "inherit"}
+                      startIcon={<DeleteIcon />}
+                      size="small"
+                      fullWidth
+                    >
+                      {removeImage ? 'Image will be removed' : 'Remove current image'}
+                    </Button>
+                  )}
+                </Box>
+              ) : (
+                // View mode - show current image
+                post.imageUrl && (
+                  <CardMedia
+                    component="img"
+                    image={post.imageUrl}
+                    alt="Post image"
+                    sx={{
+                      width: '100%',
+                      maxHeight: 200,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                    }}
+                  />
+                )
+              )}
             </Box>
           )}
 
